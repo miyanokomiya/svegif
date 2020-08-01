@@ -1,52 +1,51 @@
 <script lang="typescript">
+  import type { Point } from "../types";
   import { canvas, setTimeline, patchScene, totalTime } from "../stores/canvas";
+  import { useDrag } from "../utils/drag";
 
   let scenesWrapper: HTMLElement;
-  let timelineDragging = false;
+  let dragType: "" | "timeline" | "range" = "";
   let rangeDraggingTargetIndex = -1;
-  let rangeDraggingFromX = 0;
   let rangeDraggingOrigin = 0;
 
-  const moveTimeline = (e: MouseEvent) => {
+  const moveTimeline = (p: Point) => {
     const rect = scenesWrapper.getBoundingClientRect();
-    const rate = (e.pageX - rect.left) / rect.width;
+    const rate = (p.x - rect.left) / rect.width;
     setTimeline(rate * $totalTime);
   };
-  const onDownTimeline = (e: MouseEvent) => {
-    timelineDragging = true;
-    moveTimeline(e);
-  };
-  const onMoveTimeline = (e: MouseEvent) => {
-    if (timelineDragging) {
-      moveTimeline(e);
-    }
-    if (rangeDraggingTargetIndex !== -1) {
-      moveRange(e);
-    }
-  };
-  const onUpTimeline = (e: MouseEvent) => {
-    if (timelineDragging) {
-      moveTimeline(e);
-    }
-    if (rangeDraggingTargetIndex !== -1) {
-      moveRange(e);
-    }
-    timelineDragging = false;
-    rangeDraggingTargetIndex = -1;
-    rangeDraggingFromX = 0;
-    rangeDraggingOrigin = 0;
-  };
 
-  const moveRange = (e: MouseEvent) => {
-    const range = rangeDraggingOrigin + (e.pageX - rangeDraggingFromX) * 10;
+  const moveRange = (arg: { base: Point; p: Point }) => {
+    const range = rangeDraggingOrigin + (arg.p.x - arg.base.x) * 10;
     if (range < 1) return;
     patchScene(rangeDraggingTargetIndex, { range });
   };
+
+  const canvasDrag = useDrag((arg) => {
+    switch (dragType) {
+      case "timeline":
+        moveTimeline(arg.p);
+        break;
+      case "range":
+        moveRange(arg);
+        break;
+    }
+  });
+
+  const onDownTimeline = (e: MouseEvent) => {
+    dragType = "timeline";
+    canvasDrag.onDown(e);
+  };
   const onDownRange = (index: number, e: MouseEvent) => {
+    dragType = "range";
     rangeDraggingTargetIndex = index;
-    rangeDraggingFromX = e.pageX;
     rangeDraggingOrigin = $canvas.scenes[index].range;
-    moveRange(e);
+    canvasDrag.onDown(e);
+  };
+  const onUp = () => {
+    canvasDrag.onUp();
+    dragType = "";
+    rangeDraggingTargetIndex = -1;
+    rangeDraggingOrigin = 0;
   };
 </script>
 
@@ -54,8 +53,9 @@
   <div
     class="timeline-wrapper"
     on:mousedown|preventDefault="{onDownTimeline}"
-    on:mousemove|preventDefault="{onMoveTimeline}"
-    on:mouseup|preventDefault="{onUpTimeline}"
+    on:mousemove|preventDefault="{canvasDrag.onMove}"
+    on:mouseup|preventDefault="{onUp}"
+    on:mouseleave|preventDefault="{onUp}"
   >
     <div class="timeline-content">
       <ul bind:this="{scenesWrapper}">

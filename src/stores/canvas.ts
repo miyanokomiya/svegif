@@ -22,7 +22,7 @@ export function setTimeline(val: number): void {
 
 export function patchScene(index: number, val: Partial<Scene>): void {
   canvas.update(($canvas) => {
-    $canvas.scenes[index] = { ...$canvas.scenes[index], ...val};
+    $canvas.scenes[index] = { ...$canvas.scenes[index], ...val };
     return $canvas;
   });
 }

@@ -11,5 +11,7 @@ module.exports = {
     sourceType: "module",
   },
   env: { browser: true, node: true, es6: true },
-  rules: {},
+  rules: {
+    "@typescript-eslint/explicit-module-boundary-types": 0,
+  },
 };

@@ -16,3 +16,8 @@ export interface Canvas {
   scenes: Scene[];
   timeline: number;
 }
+
+export interface Point {
+  x: number;
+  y: number;
+}
