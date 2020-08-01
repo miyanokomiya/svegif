@@ -1,12 +1,24 @@
-import { writable } from 'svelte/store';
-import type { Scene } from '../types'
+import { writable, derived } from "svelte/store";
+import type { Scene, Canvas } from "../types";
 
-function createScenes() {
-  const scenes = writable<Scene[]>([]);
+function createCanvas() {
+  const canvas = writable<Canvas>({
+    scenes: [],
+    timeline: 0,
+  });
   return {
-    ...scenes,
-    push: (scene: Scene) => scenes.update(scenes => [...scenes, scene])
-  }
+    ...canvas,
+    pushScene: (scene: Scene) =>
+      canvas.update(($canvas) => {
+        $canvas.scenes = [...$canvas.scenes, scene];
+        return $canvas;
+      }),
+  };
 }
+export const canvas = createCanvas();
 
-export const scenes = createScenes()
+export const currentScene = derived(canvas, ($canvas) =>
+  $canvas.scenes.find(
+    (s) => s.from <= $canvas.timeline && $canvas.timeline < s.to
+  )
+);

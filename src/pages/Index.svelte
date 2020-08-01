@@ -1,15 +1,15 @@
 <script lang="typescript">
-  import { onMount } from "svelte";
   import { readImageFile } from "../utils/file";
-  import { scenes } from "../stores/canvas";
+  import { canvas, currentScene } from "../stores/canvas";
   import Timeline from "../components/Timeline.svelte";
+  import SCanvas from "../components/SCanvas.svelte";
 
   type FileEventTarget = EventTarget & { files: FileList };
 
   const onChangeFiles = (e: { target: FileEventTarget }) => {
     [...e.target.files].forEach((file) => {
       readImageFile(file).then((image) => {
-        scenes.push({ image });
+        canvas.pushScene({ image, from: 0, to: 1000 });
       });
     });
   };
@@ -18,7 +18,7 @@
   ) => {
     [...e.dataTransfer.files].forEach((file) => {
       readImageFile(file).then((image) => {
-        scenes.push({ image });
+        canvas.pushScene({ image, from: 0, to: 1000 });
       });
     });
   };
@@ -36,9 +36,13 @@
     on:dragleave|preventDefault
     on:drop|preventDefault="{dropFilesInCanvas}"
   >
-    <button class="select-file-button" on:click="{selectFiles}">
-      Drop or Select Images
-    </button>
+    {#if $currentScene}
+      <SCanvas />
+    {:else}
+      <button class="select-file-button" on:click="{selectFiles}">
+        Drop or Select Images
+      </button>
+    {/if}
   </div>
   <input
     bind:this="{fileInput}"

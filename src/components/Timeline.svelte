@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { scenes } from "../stores/canvas";
+  import { canvas } from "../stores/canvas";
 </script>
 
 <ul>
-  {#each $scenes as scene}
+  {#each $canvas.scenes as scene}
     <li>
       <img src="{scene.image.base64}" alt="" />
     </li>
