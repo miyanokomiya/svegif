@@ -1,6 +1,6 @@
 <script lang="typescript">
   import { readImageFile } from "../utils/file";
-  import { canvas, currentScene } from "../stores/canvas";
+  import { canvas, pushScene, currentScene } from "../stores/canvas";
   import Timeline from "../components/Timeline.svelte";
   import SCanvas from "../components/SCanvas.svelte";
 
@@ -9,7 +9,7 @@
   const onChangeFiles = (e: { target: FileEventTarget }) => {
     [...e.target.files].forEach((file) => {
       readImageFile(file).then((image) => {
-        canvas.pushScene({ image, from: 0, to: 1000 });
+        pushScene({ image, range: 1000 });
       });
     });
   };
@@ -18,7 +18,7 @@
   ) => {
     [...e.dataTransfer.files].forEach((file) => {
       readImageFile(file).then((image) => {
-        canvas.pushScene({ image, from: 0, to: 1000 });
+        pushScene({ image, range: 1000 });
       });
     });
   };

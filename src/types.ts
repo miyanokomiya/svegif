@@ -1,6 +1,5 @@
 export interface TimelineEntity {
-  from: number;
-  to: number;
+  range: number;
 }
 
 export interface Scene extends TimelineEntity {
