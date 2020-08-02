@@ -20,6 +20,19 @@ export function setTimeline(val: number): void {
   });
 }
 
+export function moveScene(from: number, to: number): void {
+  if (from === to) return;
+  canvas.update(($canvas) => {
+    $canvas.scenes.splice(to, 0, $canvas.scenes[from]);
+    if (from < to) {
+      $canvas.scenes.splice(from, 1);
+    } else {
+      $canvas.scenes.splice(from + 1, 1);
+    }
+    return $canvas;
+  });
+}
+
 export function patchScene(index: number, val: Partial<Scene>): void {
   canvas.update(($canvas) => {
     $canvas.scenes[index] = { ...$canvas.scenes[index], ...val };
@@ -28,15 +41,41 @@ export function patchScene(index: number, val: Partial<Scene>): void {
 }
 
 export const currentScene = derived(canvas, ($canvas) => {
-  let current = 0;
-  return $canvas.scenes.find((s) => {
-    current = current + s.range;
-    return $canvas.timeline < current;
-  });
+  return getSceneAtTime($canvas.scenes, $canvas.timeline);
 });
 
+export function getSceneAtTime(scenes: Scene[], time: number) {
+  let current = 0;
+  return scenes.find((s) => {
+    current = current + s.range;
+    return time < current;
+  });
+}
+
 export const totalTime = derived(canvas, ($canvas) => {
-  return $canvas.scenes.reduce((total, s) => {
+  return getSumOfTime($canvas.scenes);
+});
+
+export function getSumOfTime(scenes: Scene[]): number {
+  return scenes.reduce((total, s) => {
     return total + s.range;
   }, 0);
-});
+}
+
+export function getNearestSceneIndexAtTime(
+  scenes: Scene[],
+  time: number
+): number {
+  let index = 0;
+  let currentTime = 0;
+  scenes.some((s, i) => {
+    if (time < currentTime + s.range / 2) {
+      index = i;
+    } else {
+      index = i + 1;
+    }
+    currentTime = currentTime + s.range;
+    return time <= currentTime;
+  });
+  return index;
+}

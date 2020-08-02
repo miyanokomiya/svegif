@@ -1,12 +1,23 @@
-<script lang="typescript">
+<script lang="ts">
   import type { Point } from "../types";
-  import { canvas, setTimeline, patchScene, totalTime } from "../stores/canvas";
+  import {
+    canvas,
+    setTimeline,
+    patchScene,
+    moveScene,
+    totalTime,
+    getSumOfTime,
+    getNearestSceneIndexAtTime,
+  } from "../stores/canvas";
   import { useDrag } from "../utils/drag";
 
+  const RANGE_PX_SCALE = 0.1;
+
   let scenesWrapper: HTMLElement;
-  let dragType: "" | "timeline" | "range" = "";
-  let rangeDraggingTargetIndex = -1;
+  let dragType: "" | "timeline" | "range" | "sort" = "";
+  let draggingTargetIndex = -1;
   let rangeDraggingOrigin = 0;
+  let sortPoint: Point | null = null;
 
   const moveTimeline = (p: Point) => {
     const rect = scenesWrapper.getBoundingClientRect();
@@ -15,10 +26,15 @@
   };
 
   const moveRange = (arg: { base: Point; p: Point }) => {
-    const range = rangeDraggingOrigin + (arg.p.x - arg.base.x) * 10;
+    const range = rangeDraggingOrigin + (arg.p.x - arg.base.x) / RANGE_PX_SCALE;
     if (range < 1) return;
-    patchScene(rangeDraggingTargetIndex, { range });
+    patchScene(draggingTargetIndex, { range });
   };
+
+  function getNearestGapTimeAt(time: number): number {
+    const index = getNearestSceneIndexAtTime($canvas.scenes, time);
+    return getSumOfTime($canvas.scenes.slice(0, index));
+  }
 
   const canvasDrag = useDrag((arg) => {
     switch (dragType) {
@@ -27,6 +43,10 @@
         break;
       case "range":
         moveRange(arg);
+        break;
+      case "sort":
+        const rect = scenesWrapper.getBoundingClientRect();
+        sortPoint = { x: arg.p.x - rect.left, y: arg.p.y - rect.top };
         break;
     }
   });
@@ -37,15 +57,30 @@
   };
   const onDownRange = (index: number, e: MouseEvent) => {
     dragType = "range";
-    rangeDraggingTargetIndex = index;
+    draggingTargetIndex = index;
     rangeDraggingOrigin = $canvas.scenes[index].range;
+    canvasDrag.onDown(e);
+  };
+  const onDownSort = (index: number, e: MouseEvent) => {
+    dragType = "sort";
+    draggingTargetIndex = index;
     canvasDrag.onDown(e);
   };
   const onUp = () => {
     canvasDrag.onUp();
+    switch (dragType) {
+      case "sort":
+        const index = getNearestSceneIndexAtTime(
+          $canvas.scenes,
+          sortPoint.x / RANGE_PX_SCALE
+        );
+        moveScene(draggingTargetIndex, index);
+        break;
+    }
     dragType = "";
-    rangeDraggingTargetIndex = -1;
+    draggingTargetIndex = -1;
     rangeDraggingOrigin = 0;
+    sortPoint = null;
   };
 </script>
 
@@ -60,16 +95,35 @@
     <div class="timeline-content">
       <ul bind:this="{scenesWrapper}">
         {#each $canvas.scenes as scene, i}
-          <li style="{`width: ${scene.range / 10}px;`}">
+          <li style="{`width: ${scene.range * RANGE_PX_SCALE}px;`}">
             <img src="{scene.image.base64}" alt="" />
             <div
-              class="anchor"
+              class="range-anchor"
               on:mousedown|preventDefault|stopPropagation="{(e) => onDownRange(i, e)}"
             >
               &lt;&lt;
             </div>
+            <div
+              class="sort-anchor"
+              on:mousedown|preventDefault|stopPropagation="{(e) => onDownSort(i, e)}"
+            >
+              -
+            </div>
           </li>
         {/each}
+        {#if sortPoint}
+          <li
+            class="sort-dummy"
+            style="{`width: ${$canvas.scenes[draggingTargetIndex].range * RANGE_PX_SCALE}px; left: ${sortPoint.x}px;`}"
+          >
+            <img
+              src="{$canvas.scenes[draggingTargetIndex].image.base64}"
+              alt=""
+            />
+            <div class="range-anchor">&lt;&lt;</div>
+            <div class="sort-anchor">-</div>
+          </li>
+        {/if}
       </ul>
       <div
         class="line"
@@ -77,6 +131,12 @@
       >
         <div></div>
       </div>
+      {#if sortPoint}
+        <div
+          class="sort-line"
+          style="{`left: ${(getNearestGapTimeAt(sortPoint.x / RANGE_PX_SCALE) / $totalTime) * 100}%;`}"
+        ></div>
+      {/if}
     </div>
   </div>
 </div>
@@ -88,6 +148,7 @@
   .timeline-wrapper {
     display: flex;
     border: 1px solid #000;
+    overflow: auto;
   }
   .timeline-content {
     position: relative;
@@ -107,10 +168,9 @@
       height: 80px;
       width: 100%;
     }
-    .anchor {
+    .range-anchor,
+    .sort-anchor {
       position: absolute;
-      bottom: 0;
-      right: 0;
       width: 36px;
       height: 20px;
       display: flex;
@@ -120,6 +180,19 @@
       border: 1px solid #000;
       cursor: move;
     }
+    .range-anchor {
+      bottom: 0;
+      right: 0;
+    }
+    .sort-anchor {
+      top: 0;
+      right: 0;
+    }
+  }
+  li.sort-dummy {
+    position: absolute;
+    opacity: 0.5;
+    transform: translateX(calc(-100% + 18px));
   }
   .line {
     position: absolute;
@@ -128,14 +201,23 @@
     height: 100%;
     padding: 0 5px;
     transform: translateX(-50%);
-    border-top: 3px solid blue;
-    border-bottom: 3px solid blue;
+    border-top: 3px solid red;
+    border-bottom: 3px solid red;
     pointer-events: none;
 
     > div {
       width: 100%;
       height: 100%;
-      background-color: blue;
+      background-color: red;
     }
+  }
+  .sort-line {
+    position: absolute;
+    top: 0;
+    width: 5px;
+    height: 100%;
+    transform: translateX(-50%);
+    background-color: blue;
+    pointer-events: none;
   }
 </style>
