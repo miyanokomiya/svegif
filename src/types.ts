@@ -4,6 +4,7 @@ export interface TimelineEntity {
 
 export interface Scene extends TimelineEntity {
   image: ImageData;
+  layers: Layer[];
 }
 
 export interface ImageData {

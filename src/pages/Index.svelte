@@ -1,17 +1,34 @@
 <script lang="typescript">
   import { onMount } from "svelte";
+  import type { ImageData } from "../types";
   import { readImageFile } from "../utils/file";
-  import { canvas, pushScene, pushLayer, currentScene } from "../stores/canvas";
-  import { getLayer } from "../utils/layer";
+  import { canvas, pushLayer, currentScene } from "../stores/canvas";
+  import { getLayer, getImageElement } from "../utils/layer";
   import Timeline from "../components/Timeline.svelte";
   import SCanvas from "../components/SCanvas.svelte";
 
   type FileEventTarget = EventTarget & { files: FileList };
 
+  function pushLayerFromImage(image: ImageData) {
+    pushLayer(
+      getLayer({
+        from: 0,
+        range: 1000,
+        elements: [
+          getImageElement({
+            base64: image.base64,
+            width: image.width,
+            height: image.height,
+          }),
+        ],
+      })
+    );
+  }
+
   const onChangeFiles = (e: { target: FileEventTarget }) => {
     [...e.target.files].forEach((file) => {
       readImageFile(file).then((image) => {
-        pushScene({ image, range: 1000 });
+        pushLayerFromImage(image);
       });
     });
   };
@@ -20,7 +37,7 @@
   ) => {
     [...e.dataTransfer.files].forEach((file) => {
       readImageFile(file).then((image) => {
-        pushScene({ image, range: 1000 });
+        pushLayerFromImage(image);
       });
     });
   };

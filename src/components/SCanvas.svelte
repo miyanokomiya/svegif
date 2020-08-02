@@ -2,6 +2,7 @@
   import { currentScene } from "../stores/canvas";
   import { useDrag } from "../utils/drag";
   import { SCALE_BETA, SCALE_RANGE, getZoomInfo } from "../utils/canvasView";
+  import SElement from "./elements/SElement.svelte";
 
   export let width = 100;
   export let height = 100;
@@ -66,16 +67,11 @@
     {width}
     {height}
   >
-    {#if $currentScene.image}
-      <image
-        x="imageRect.x"
-        y="imageRect.y"
-        width="{$currentScene.image.width}"
-        height="{$currentScene.image.height}"
-        xlink:href="{$currentScene.image.base64}"
-        xmlns:xlink="http://www.w3.org/1999/xlink"
-      ></image>
-    {/if}
+    {#each $currentScene.layers as layer}
+      {#each layer.elements as element}
+        <SElement {element} />
+      {/each}
+    {/each}
   </svg>
   <div bind:this="{scaleSlider}" class="scale-slider">
     <div

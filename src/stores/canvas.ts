@@ -1,18 +1,12 @@
 import { writable, derived } from "svelte/store";
 import type { Scene, Layer, Canvas } from "../types";
+import { getLayer } from "../utils/layer";
 
 export const canvas = writable<Canvas>({
   scenes: [],
-  layers: [],
+  layers: [getLayer({ from: 0, range: 1000 })],
   timeline: 0,
 });
-
-export function pushScene(scene: Scene): void {
-  canvas.update(($canvas) => {
-    $canvas.scenes = [...$canvas.scenes, scene];
-    return $canvas;
-  });
-}
 
 export function pushLayer(layer: Layer): void {
   canvas.update(($canvas) => {
@@ -49,19 +43,22 @@ export function patchScene(index: number, val: Partial<Scene>): void {
 }
 
 export const currentScene = derived(canvas, ($canvas) => {
-  return getSceneAtTime($canvas.scenes, $canvas.timeline);
+  return {
+    image: "",
+    layers: getLayersAtTime($canvas.layers, $canvas.timeline),
+  };
 });
 
-export function getSceneAtTime(scenes: Scene[], time: number) {
-  let current = 0;
-  return scenes.find((s) => {
-    current = current + s.range;
-    return time < current;
+export function getLayersAtTime(layers: Layer[], time: number) {
+  return layers.filter((l) => {
+    return l.from <= time && time < l.from + l.range;
   });
 }
 
 export const totalTime = derived(canvas, ($canvas) => {
-  return getSumOfTime($canvas.scenes);
+  return $canvas.layers
+    .map((l) => l.from + l.range)
+    .reduce((a, b) => Math.max(a, b), 0);
 });
 
 export function getSumOfTime(scenes: Scene[]): number {
