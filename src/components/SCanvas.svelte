@@ -16,13 +16,26 @@
   $: scaleRate = Math.log(scale) / Math.log(SCALE_BETA);
   $: scaleAnchorTop = `${(scaleRate / SCALE_RANGE + 1 / 2) * 100}%`;
 
+  function getCenter() {
+    return {
+      x: base.x + (width / 2) * scale,
+      y: base.y + (height / 2) * scale,
+    };
+  }
+
   function recalcZoom(pageY: number) {
     const rect = scaleSlider.getBoundingClientRect();
     const rate = (pageY - rect.top) / rect.height;
+    const oldCenter = getCenter();
     scale = Math.max(
       Math.min(Math.pow(SCALE_BETA, SCALE_RANGE * (rate - 0.5)), SCALE_MAX),
       SCALE_MIN
     );
+    const newCenter = getCenter();
+    base = {
+      x: base.x - (newCenter.x - oldCenter.x),
+      y: base.y - (newCenter.y - oldCenter.y),
+    };
   }
 
   const canvasDrag = useDrag((arg) => {
