@@ -23,7 +23,7 @@
 
   const moveTimeline = (p: Point) => {
     const rect = scenesWrapper.getBoundingClientRect();
-    const rate = (p.x - rect.left) / rect.width;
+    const rate = (p.x - rect.left) / ($totalTime * RANGE_PX_SCALE);
     setTimeline(rate * $totalTime);
   };
 
