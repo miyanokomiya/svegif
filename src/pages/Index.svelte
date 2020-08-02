@@ -1,7 +1,8 @@
 <script lang="typescript">
   import { onMount } from "svelte";
   import { readImageFile } from "../utils/file";
-  import { canvas, pushScene, currentScene } from "../stores/canvas";
+  import { canvas, pushScene, pushLayer, currentScene } from "../stores/canvas";
+  import { getLayer } from "../utils/layer";
   import Timeline from "../components/Timeline.svelte";
   import SCanvas from "../components/SCanvas.svelte";
 
@@ -41,6 +42,10 @@
   onMount(() => {
     recalcCanvasSize();
   });
+
+  const addLayer = () => {
+    pushLayer(getLayer({ from: $canvas.timeline, range: 1000 }));
+  };
 </script>
 
 <svelte:window on:resize="{recalcCanvasSize}" />
@@ -53,7 +58,7 @@
     on:drop|preventDefault="{dropFilesInCanvas}"
   >
     {#if $currentScene}
-      <SCanvas width="{width}" height="{height}" />
+      <SCanvas {width} {height} />
     {:else}
       <button class="select-file-button" on:click="{selectFiles}">
         Drop or Select Images
@@ -70,12 +75,15 @@
   <div class="timeline-block">
     <Timeline />
   </div>
+  <div class="tool-block">
+    <button on:click="{addLayer}">Add Layer</button>
+  </div>
 </div>
 
 <style lang="scss">
   .clip-canvas {
     width: 100%;
-    height: 70vh;
+    height: 60vh;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -91,5 +99,15 @@
   .timeline-block {
     height: 25vh;
     overflow: auto;
+  }
+  .tool-block {
+    height: 10vh;
+    overflow: auto;
+
+    button {
+      background-color: #4682b4;
+      padding: 0.5rem 1rem;
+      margin: 0;
+    }
   }
 </style>

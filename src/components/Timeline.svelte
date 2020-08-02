@@ -12,6 +12,7 @@
   import { useDrag } from "../utils/drag";
   import TicMark from "./TicMark.svelte";
   import TimelineScene from "./TimelineScene.svelte";
+  import TimelineLayer from "./TimelineLayer.svelte";
 
   const RANGE_PX_SCALE = 0.1;
 
@@ -100,6 +101,7 @@
     on:mouseleave|preventDefault="{onUp}"
   >
     <div class="timeline-content">
+      <TicMark rangePxScale="{RANGE_PX_SCALE}" totalTime="{$totalTime}" />
       <ul class="scenes" bind:this="{scenesWrapper}">
         {#each $canvas.scenes as scene, i}
           <li style="{`width: ${scene.range * RANGE_PX_SCALE}px;`}">
@@ -111,7 +113,20 @@
           </li>
         {/each}
       </ul>
-      <TicMark rangePxScale="{RANGE_PX_SCALE}" totalTime="{$totalTime}" />
+      <ul class="layers">
+        {#each $canvas.layers as layer, i}
+          <li>
+            <div
+              style="{`width: ${layer.range * RANGE_PX_SCALE}px; left: ${layer.from * RANGE_PX_SCALE}px;`}"
+            >
+              <TimelineLayer {layer} />
+            </div>
+          </li>
+          {#if i % 2 === 1}
+            <TicMark rangePxScale="{RANGE_PX_SCALE}" totalTime="{$totalTime}" />
+          {/if}
+        {/each}
+      </ul>
       <div class="line" style="{`left: ${timelineLeftPx}px;`}">
         <div></div>
       </div>
@@ -150,6 +165,18 @@
       li {
         display: flex;
         border-right: 1px solid #aaa;
+      }
+    }
+    .layers {
+      list-style: none;
+
+      > li {
+        width: 100%;
+        border: solid 1px #000;
+
+        > div {
+          position: relative;
+        }
       }
     }
   }

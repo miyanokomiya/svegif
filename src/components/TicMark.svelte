@@ -27,5 +27,7 @@
     align-items: center;
     justify-content: flex-end;
     border-right: solid 1px #000;
+    font-size: 14px;
+    line-height: 1.2;
   }
 </style>

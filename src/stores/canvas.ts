@@ -1,14 +1,22 @@
 import { writable, derived } from "svelte/store";
-import type { Scene, Canvas } from "../types";
+import type { Scene, Layer, Canvas } from "../types";
 
 export const canvas = writable<Canvas>({
   scenes: [],
+  layers: [],
   timeline: 0,
 });
 
 export function pushScene(scene: Scene): void {
   canvas.update(($canvas) => {
     $canvas.scenes = [...$canvas.scenes, scene];
+    return $canvas;
+  });
+}
+
+export function pushLayer(layer: Layer): void {
+  canvas.update(($canvas) => {
+    $canvas.layers = [...$canvas.layers, layer];
     return $canvas;
   });
 }
