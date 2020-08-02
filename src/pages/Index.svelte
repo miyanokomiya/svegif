@@ -1,4 +1,5 @@
 <script lang="typescript">
+  import { onMount } from "svelte";
   import { readImageFile } from "../utils/file";
   import { canvas, pushScene, currentScene } from "../stores/canvas";
   import Timeline from "../components/Timeline.svelte";
@@ -27,17 +28,32 @@
   const selectFiles = () => {
     fileInput?.click();
   };
+
+  let canvasWrapper: HTMLElement | null;
+  let width = 100;
+  let height = 100;
+  function recalcCanvasSize() {
+    if (!canvasWrapper) return;
+    const rect = canvasWrapper.getBoundingClientRect();
+    width = rect.width;
+    height = rect.height;
+  }
+  onMount(() => {
+    recalcCanvasSize();
+  });
 </script>
 
+<svelte:window on:resize="{recalcCanvasSize}" />
 <div>
   <div
     class="clip-canvas"
+    bind:this="{canvasWrapper}"
     on:dragover|preventDefault="{(e) => (e.dataTransfer.dropEffect = 'copy')}"
     on:dragleave|preventDefault
     on:drop|preventDefault="{dropFilesInCanvas}"
   >
     {#if $currentScene}
-      <SCanvas />
+      <SCanvas width="{width}" height="{height}" />
     {:else}
       <button class="select-file-button" on:click="{selectFiles}">
         Drop or Select Images
@@ -51,13 +67,15 @@
     accept="image/*"
     on:change="{onChangeFiles}"
   />
-  <Timeline />
+  <div class="timeline-block">
+    <Timeline />
+  </div>
 </div>
 
 <style lang="scss">
   .clip-canvas {
     width: 100%;
-    height: 80vh;
+    height: 70vh;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -69,5 +87,9 @@
   }
   input[type="file"] {
     display: none;
+  }
+  .timeline-block {
+    height: 25vh;
+    overflow: auto;
   }
 </style>
