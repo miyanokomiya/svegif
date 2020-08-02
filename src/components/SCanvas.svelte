@@ -1,6 +1,7 @@
 <script lang="ts">
   import { currentScene } from "../stores/canvas";
   import { useDrag } from "../utils/drag";
+  import { SCALE_BETA, SCALE_RANGE, getZoomInfo } from "../utils/canvasView";
 
   export let width = 100;
   export let height = 100;
@@ -8,34 +9,21 @@
   let base = { x: 0, y: 0 };
   let dragType: "" | "scroll" | "zoom" = "";
   let scaleSlider: HTMLElement | null;
-
-  const SCALE_BETA = 1.1;
-  const SCALE_RANGE = 20;
-  const SCALE_MAX = Math.pow(1.1, SCALE_RANGE / 2);
-  const SCALE_MIN = Math.pow(1.1, -SCALE_RANGE / 2);
+  $: canvasView = {
+    scale,
+    base,
+    width,
+    height,
+  };
   $: scaleRate = Math.log(scale) / Math.log(SCALE_BETA);
   $: scaleAnchorTop = `${(scaleRate / SCALE_RANGE + 1 / 2) * 100}%`;
-
-  function getCenter() {
-    return {
-      x: base.x + (width / 2) * scale,
-      y: base.y + (height / 2) * scale,
-    };
-  }
 
   function recalcZoom(pageY: number) {
     const rect = scaleSlider.getBoundingClientRect();
     const rate = (pageY - rect.top) / rect.height;
-    const oldCenter = getCenter();
-    scale = Math.max(
-      Math.min(Math.pow(SCALE_BETA, SCALE_RANGE * (rate - 0.5)), SCALE_MAX),
-      SCALE_MIN
-    );
-    const newCenter = getCenter();
-    base = {
-      x: base.x - (newCenter.x - oldCenter.x),
-      y: base.y - (newCenter.y - oldCenter.y),
-    };
+    const next = getZoomInfo(canvasView, rate);
+    scale = next.scale;
+    base = next.base;
   }
 
   const canvasDrag = useDrag((arg) => {
@@ -58,8 +46,8 @@
     recalcZoom(e.pageY);
   };
   const onUp = () => {
-    dragType = "";
     canvasDrag.onUp();
+    dragType = "";
   };
 </script>
 

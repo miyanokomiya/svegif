@@ -21,3 +21,10 @@ export interface Point {
   x: number;
   y: number;
 }
+
+export interface CanvasView {
+  scale: number;
+  base: Point;
+  width: number;
+  height: number;
+}
