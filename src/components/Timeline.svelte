@@ -93,7 +93,7 @@
     on:mouseleave|preventDefault="{onUp}"
   >
     <div class="timeline-content">
-      <ul bind:this="{scenesWrapper}">
+      <ul class="scenes" bind:this="{scenesWrapper}">
         {#each $canvas.scenes as scene, i}
           <li style="{`width: ${scene.range * RANGE_PX_SCALE}px;`}">
             <img src="{scene.image.base64}" alt="" />
@@ -125,6 +125,13 @@
           </li>
         {/if}
       </ul>
+      <div class="tic-mark">
+        <ul>
+          {#each [...Array(Math.ceil($totalTime / 1000))] as _, i}
+            <li>{i + 1}s</li>
+          {/each}
+        </ul>
+      </div>
       <div
         class="line"
         style="{`left: ${($canvas.timeline / $totalTime) * 100}%;`}"
@@ -153,46 +160,65 @@
   .timeline-content {
     position: relative;
     display: inline-flex;
-  }
-  ul {
-    display: flex;
-    list-style: none;
-    cursor: pointer;
-  }
-  li {
-    position: relative;
-    display: flex;
-    border: 1px solid #aaa;
+    flex-direction: column;
 
-    img {
-      height: 80px;
-      width: 100%;
-    }
-    .range-anchor,
-    .sort-anchor {
-      position: absolute;
-      width: 36px;
-      height: 20px;
+    .scenes {
       display: flex;
-      align-items: center;
-      justify-content: center;
-      background-color: #aaa;
-      border: 1px solid #000;
-      cursor: move;
+      list-style: none;
+      cursor: pointer;
+
+      li {
+        position: relative;
+        display: flex;
+        border-right: 1px solid #aaa;
+
+        img {
+          height: 80px;
+          width: 100%;
+        }
+        .range-anchor,
+        .sort-anchor {
+          position: absolute;
+          width: 36px;
+          height: 20px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background-color: #aaa;
+          border: 1px solid #000;
+          cursor: move;
+        }
+        .range-anchor {
+          bottom: 0;
+          right: 0;
+        }
+        .sort-anchor {
+          top: 0;
+          right: 0;
+        }
+      }
+      li.sort-dummy {
+        position: absolute;
+        opacity: 0.5;
+        transform: translateX(calc(-100% + 18px));
+      }
     }
-    .range-anchor {
-      bottom: 0;
-      right: 0;
+    .tic-mark {
+      ul {
+        display: flex;
+        list-style: none;
+        cursor: pointer;
+        border-top: solid 1px #000;
+      }
+      li {
+        width: 100px;
+        padding-right: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        border-right: solid 1px #000;
+      }
     }
-    .sort-anchor {
-      top: 0;
-      right: 0;
-    }
-  }
-  li.sort-dummy {
-    position: absolute;
-    opacity: 0.5;
-    transform: translateX(calc(-100% + 18px));
   }
   .line {
     position: absolute;
