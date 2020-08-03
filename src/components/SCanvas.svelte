@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { currentScene } from "../stores/canvas";
+  import { canvas, currentScene } from "../stores/canvas";
   import { useDrag } from "../utils/drag";
   import { SCALE_BETA, SCALE_RANGE, getZoomInfo } from "../utils/canvasView";
   import SElement from "./elements/SElement.svelte";
@@ -72,6 +72,16 @@
         <SElement {element} />
       {/each}
     {/each}
+    <rect
+      x="{$canvas.viewBox.x}"
+      y="{$canvas.viewBox.y}"
+      width="{$canvas.viewBox.width}"
+      height="{$canvas.viewBox.height}"
+      fill="none"
+      stroke="red"
+      stroke-width="2"
+      stroke-dasharray="24 3 2 3 2 3"
+    ></rect>
   </svg>
   <div bind:this="{scaleSlider}" class="scale-slider">
     <div

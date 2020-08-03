@@ -24,12 +24,7 @@ export interface BaseElement {
   key: string;
 }
 
-export interface RectElement extends BaseElement {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
+export interface RectElement extends BaseElement, Rect {}
 
 export interface ImageElement extends RectElement {
   base64: string;
@@ -39,11 +34,17 @@ export interface Canvas {
   scenes: Scene[];
   layers: Layer[];
   timeline: number;
+  viewBox: Rect;
 }
 
 export interface Point {
   x: number;
   y: number;
+}
+
+export interface Rect extends Point {
+  width: number;
+  height: number;
 }
 
 export interface CanvasView {

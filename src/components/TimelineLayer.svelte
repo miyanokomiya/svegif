@@ -1,10 +1,26 @@
 <script lang="ts">
   import type { Layer } from "../types";
+  import SElement from "./elements/SElement.svelte";
+  import { canvas } from "../stores/canvas";
 
   export let layer: Layer;
+
+  $: viewBox = `${$canvas.viewBox.x} ${$canvas.viewBox.y} ${$canvas.viewBox.width} ${$canvas.viewBox.height}`;
 </script>
 
 <div class="root">
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    preserveAspectRatio="none"
+    font-family="sans-serif"
+    {viewBox}
+    width="100%"
+    height="100%"
+  >
+    {#each layer.elements as element}
+      <SElement {element} />
+    {/each}
+  </svg>
 </div>
 
 <style lang="scss">

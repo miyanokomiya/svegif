@@ -6,6 +6,7 @@ export const canvas = writable<Canvas>({
   scenes: [],
   layers: [getLayer({ from: 0, range: 1000 })],
   timeline: 0,
+  viewBox: { x: 0, y: 0, width: 400, height: 400 },
 });
 
 export function pushLayer(layer: Layer): void {
