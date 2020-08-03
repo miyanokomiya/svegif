@@ -9,10 +9,14 @@
 
   type FileEventTarget = EventTarget & { files: FileList };
 
+  function pushPlainLayer() {
+    pushLayer(getLayer({ from: $canvas.timeline, range: 1000 }));
+  }
+
   function pushLayerFromImage(image: ImageData) {
     pushLayer(
       getLayer({
-        from: 0,
+        from: $canvas.timeline,
         range: 1000,
         elements: [
           getImageElement({
@@ -59,10 +63,6 @@
   onMount(() => {
     recalcCanvasSize();
   });
-
-  const addLayer = () => {
-    pushLayer(getLayer({ from: $canvas.timeline, range: 1000 }));
-  };
 </script>
 
 <svelte:window on:resize="{recalcCanvasSize}" />
@@ -93,7 +93,7 @@
     <Timeline />
   </div>
   <div class="tool-block">
-    <button on:click="{addLayer}">Add Layer</button>
+    <button on:click="{pushPlainLayer}">Add Layer</button>
   </div>
 </div>
 
