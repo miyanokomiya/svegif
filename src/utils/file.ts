@@ -1,4 +1,4 @@
-import type { ImageData } from "../types";
+import type { ImageData } from '../types';
 
 export function readImageFile(file: File): Promise<ImageData> {
   return new Promise((resolve, reject) => {

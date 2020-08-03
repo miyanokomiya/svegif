@@ -5,7 +5,8 @@
     "build": "rollup -c",
     "dev": "rollup -c -w",
     "start": "sirv public",
-    "validate": "svelte-check"
+    "validate": "svelte-check",
+    "lint": "eslint --ext .js,.ts,.svelte ./src"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^12.0.0",
@@ -18,6 +19,7 @@
     "eslint": "^7.6.0",
     "eslint-config-prettier": "^6.11.0",
     "eslint-plugin-prettier": "^3.1.4",
+    "eslint-plugin-svelte3": "^2.7.3",
     "prettier": "^2.0.5",
     "prettier-plugin-svelte": "^1.1.0",
     "rollup": "^2.3.4",

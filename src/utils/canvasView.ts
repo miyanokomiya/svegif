@@ -1,4 +1,4 @@
-import type { Point, CanvasView } from "../types";
+import type { Point, CanvasView } from '../types';
 
 export const SCALE_BETA = 1.1;
 export const SCALE_RANGE = 20;

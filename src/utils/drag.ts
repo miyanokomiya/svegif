@@ -1,4 +1,4 @@
-import type { Point } from "../types";
+import type { Point } from '../types';
 
 export function useDrag(
   callback: (arg: { base: Point; p: Point; d: Point }) => void

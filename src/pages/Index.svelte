@@ -1,11 +1,11 @@
 <script lang="typescript">
-  import { onMount } from "svelte";
-  import type { ImageData } from "../types";
-  import { readImageFile } from "../utils/file";
-  import { canvas, pushLayer, currentScene } from "../stores/canvas";
-  import { getLayer, getImageElement } from "../utils/layer";
-  import Timeline from "../components/Timeline.svelte";
-  import SCanvas from "../components/SCanvas.svelte";
+  import { onMount } from 'svelte';
+  import type { ImageData } from '../types';
+  import { readImageFile } from '../utils/file';
+  import { canvas, pushLayer, currentScene } from '../stores/canvas';
+  import { getLayer, getImageElement } from '../utils/layer';
+  import Timeline from '../components/Timeline.svelte';
+  import SCanvas from '../components/SCanvas.svelte';
 
   type FileEventTarget = EventTarget & { files: FileList };
 
@@ -46,7 +46,7 @@
     });
   };
 
-  let fileInput: HTMLInputElement;
+  let fileInput: HTMLElement;
   const selectFiles = () => {
     fileInput?.click();
   };
@@ -110,7 +110,7 @@
     padding: 2rem;
     background-color: #aaa;
   }
-  input[type="file"] {
+  input[type='file'] {
     display: none;
   }
   .timeline-block {

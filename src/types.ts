@@ -20,7 +20,7 @@ export interface Layer extends TimelineEntity {
 }
 
 export interface BaseElement {
-  readonly type: "rect" | "image";
+  readonly type: 'rect' | 'image';
   key: string;
 }
 

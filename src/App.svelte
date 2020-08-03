@@ -5,6 +5,3 @@
 <main>
   <Index />
 </main>
-
-<style>
-</style>

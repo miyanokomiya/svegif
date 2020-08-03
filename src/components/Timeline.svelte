@@ -3,7 +3,6 @@
   import {
     canvas,
     setTimeline,
-    patchScene,
     patchLayer,
     sortLayer,
     totalTime,
@@ -15,9 +14,8 @@
   const RANGE_PX_SCALE = 0.1;
 
   let layerWrapper: HTMLElement;
-  let dragType: '' | 'timeline' | 'range' | 'sort' | 'move' = '';
+  let dragType: '' | 'timeline' | 'sort' | 'move' = '';
   let draggingTargetIndex = -1;
-  let rangeDraggingOrigin = 0;
   let draggingLayerOrigin: { from: number; range: number } | null = null;
   let sortPoint: Point | null = null;
 
@@ -33,19 +31,10 @@
     setTimeline(Math.min(Math.max(rate, 0), 1) * $totalTime);
   }
 
-  const moveRange = (arg: { base: Point; p: Point }) => {
-    const range = rangeDraggingOrigin + (arg.p.x - arg.base.x) / RANGE_PX_SCALE;
-    if (range < 1) return;
-    patchScene(draggingTargetIndex, { range });
-  };
-
   const canvasDrag = useDrag((arg) => {
     switch (dragType) {
       case 'timeline':
         moveTimeline(arg.p.x);
-        break;
-      case 'range':
-        moveRange(arg);
         break;
       case 'sort':
         const rect = layerWrapper.getBoundingClientRect();
@@ -64,12 +53,6 @@
 
   const onDownTimeline = (e: MouseEvent) => {
     dragType = 'timeline';
-    canvasDrag.onDown(e);
-  };
-  const onDownRange = (index: number, e: MouseEvent) => {
-    dragType = 'range';
-    draggingTargetIndex = index;
-    rangeDraggingOrigin = $canvas.scenes[index].range;
     canvasDrag.onDown(e);
   };
   const onDownSort = (index: number, e: MouseEvent) => {
@@ -96,7 +79,6 @@
     dragType = '';
     draggingTargetIndex = -1;
     draggingLayerOrigin = null;
-    rangeDraggingOrigin = 0;
     sortPoint = null;
   };
 

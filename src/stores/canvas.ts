@@ -1,6 +1,6 @@
-import { writable, derived } from "svelte/store";
-import type { Scene, Layer, Canvas } from "../types";
-import { getLayer } from "../utils/layer";
+import { writable, derived } from 'svelte/store';
+import type { Scene, Layer, Canvas } from '../types';
+import { getLayer } from '../utils/layer';
 
 export const canvas = writable<Canvas>({
   scenes: [],
@@ -52,7 +52,7 @@ export function patchLayer(index: number, val: Partial<Layer>): void {
 
 export const currentScene = derived(canvas, ($canvas) => {
   return {
-    image: "",
+    image: '',
     layers: getLayersAtTime($canvas.layers, $canvas.timeline),
   };
 });
