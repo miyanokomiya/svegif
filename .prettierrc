@@ -3,4 +3,5 @@
   "svelteStrictMode": true,
   "svelteBracketNewLine": true,
   "svelteAllowShorthand": true,
+  "singleQuote": true,
 }

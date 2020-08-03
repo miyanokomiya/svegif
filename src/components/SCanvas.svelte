@@ -1,14 +1,14 @@
 <script lang="ts">
-  import { canvas, currentScene } from "../stores/canvas";
-  import { useDrag } from "../utils/drag";
-  import { SCALE_BETA, SCALE_RANGE, getZoomInfo } from "../utils/canvasView";
-  import SElement from "./elements/SElement.svelte";
+  import { canvas, currentScene } from '../stores/canvas';
+  import { useDrag } from '../utils/drag';
+  import { SCALE_BETA, SCALE_RANGE, getZoomInfo } from '../utils/canvasView';
+  import SElement from './elements/SElement.svelte';
 
   export let width = 100;
   export let height = 100;
   let scale = 1;
   let base = { x: 0, y: 0 };
-  let dragType: "" | "scroll" | "zoom" = "";
+  let dragType: '' | 'scroll' | 'zoom' = '';
   let scaleSlider: HTMLElement | null;
   $: canvasView = {
     scale,
@@ -29,26 +29,26 @@
 
   const canvasDrag = useDrag((arg) => {
     switch (dragType) {
-      case "scroll":
+      case 'scroll':
         base = { x: base.x - arg.d.x * scale, y: base.y - arg.d.y * scale };
         break;
-      case "zoom":
+      case 'zoom':
         recalcZoom(arg.p.y);
         break;
     }
   });
   const onDownCanvas = (e: MouseEvent) => {
     canvasDrag.onDown(e);
-    dragType = "scroll";
+    dragType = 'scroll';
   };
   const onDownZoom = (e: MouseEvent) => {
     canvasDrag.onDown(e);
-    dragType = "zoom";
+    dragType = 'zoom';
     recalcZoom(e.pageY);
   };
   const onUp = () => {
     canvasDrag.onUp();
-    dragType = "";
+    dragType = '';
   };
 </script>
 
@@ -67,8 +67,8 @@
     {width}
     {height}
   >
-    {#each $currentScene.layers as layer}
-      {#each layer.elements as element}
+    {#each $currentScene.layers as layer (layer.key)}
+      {#each layer.elements as element (element.key)}
         <SElement {element} />
       {/each}
     {/each}

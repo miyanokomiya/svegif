@@ -43,6 +43,13 @@ export function patchScene(index: number, val: Partial<Scene>): void {
   });
 }
 
+export function patchLayer(index: number, val: Partial<Layer>): void {
+  canvas.update(($canvas) => {
+    $canvas.layers[index] = { ...$canvas.layers[index], ...val };
+    return $canvas;
+  });
+}
+
 export const currentScene = derived(canvas, ($canvas) => {
   return {
     image: "",

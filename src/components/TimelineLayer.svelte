@@ -12,6 +12,9 @@
   function onMouseDownSort(e: MouseEvent) {
     dispatch("mouseDownSort", e);
   }
+  function onMouseDownMove(e: MouseEvent) {
+    dispatch("mouseDownMove", e);
+  }
 </script>
 
 <div class="root">
@@ -23,7 +26,7 @@
     width="100%"
     height="100%"
   >
-    {#each layer.elements as element}
+    {#each layer.elements as element (element.key)}
       <SElement {element} />
     {/each}
   </svg>
@@ -35,7 +38,7 @@
   </div>
   <div
     class="move-anchor"
-    on:mousedown|preventDefault|stopPropagation="{onMouseDownSort}"
+    on:mousedown|preventDefault|stopPropagation="{onMouseDownMove}"
   >
     &gt;
   </div>

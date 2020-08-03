@@ -1,22 +1,24 @@
 <script lang="ts">
-  import type { Point, Layer } from "../types";
+  import type { Point, Layer } from '../types';
   import {
     canvas,
     setTimeline,
     patchScene,
+    patchLayer,
     sortLayer,
     totalTime,
-  } from "../stores/canvas";
-  import { useDrag } from "../utils/drag";
-  import TicMark from "./TicMark.svelte";
-  import TimelineLayer from "./TimelineLayer.svelte";
+  } from '../stores/canvas';
+  import { useDrag } from '../utils/drag';
+  import TicMark from './TicMark.svelte';
+  import TimelineLayer from './TimelineLayer.svelte';
 
   const RANGE_PX_SCALE = 0.1;
 
   let layerWrapper: HTMLElement;
-  let dragType: "" | "timeline" | "range" | "sort" = "";
+  let dragType: '' | 'timeline' | 'range' | 'sort' | 'move' = '';
   let draggingTargetIndex = -1;
   let rangeDraggingOrigin = 0;
+  let draggingLayerOrigin: { from: number; range: number } | null = null;
   let sortPoint: Point | null = null;
 
   function getLayerStyle(layer: Layer): string {
@@ -25,11 +27,11 @@
     }px;`;
   }
 
-  const moveTimeline = (p: Point) => {
+  function moveTimeline(x: number) {
     const rect = layerWrapper.getBoundingClientRect();
-    const rate = (p.x - rect.left) / ($totalTime * RANGE_PX_SCALE);
+    const rate = (x - rect.left) / ($totalTime * RANGE_PX_SCALE);
     setTimeline(Math.min(Math.max(rate, 0), 1) * $totalTime);
-  };
+  }
 
   const moveRange = (arg: { base: Point; p: Point }) => {
     const range = rangeDraggingOrigin + (arg.p.x - arg.base.x) / RANGE_PX_SCALE;
@@ -39,43 +41,61 @@
 
   const canvasDrag = useDrag((arg) => {
     switch (dragType) {
-      case "timeline":
-        moveTimeline(arg.p);
+      case 'timeline':
+        moveTimeline(arg.p.x);
         break;
-      case "range":
+      case 'range':
         moveRange(arg);
         break;
-      case "sort":
+      case 'sort':
         const rect = layerWrapper.getBoundingClientRect();
         sortPoint = { x: arg.p.x - rect.left, y: arg.p.y - rect.top };
+        break;
+      case 'move':
+        patchLayer(draggingTargetIndex, {
+          from: Math.max(
+            draggingLayerOrigin.from + (arg.p.x - arg.base.x) / RANGE_PX_SCALE,
+            0
+          ),
+        });
         break;
     }
   });
 
   const onDownTimeline = (e: MouseEvent) => {
-    dragType = "timeline";
+    dragType = 'timeline';
     canvasDrag.onDown(e);
   };
   const onDownRange = (index: number, e: MouseEvent) => {
-    dragType = "range";
+    dragType = 'range';
     draggingTargetIndex = index;
     rangeDraggingOrigin = $canvas.scenes[index].range;
     canvasDrag.onDown(e);
   };
   const onDownSort = (index: number, e: MouseEvent) => {
-    dragType = "sort";
+    dragType = 'sort';
     draggingTargetIndex = index;
+    canvasDrag.onDown(e);
+  };
+  const onDownMove = (index: number, e: MouseEvent) => {
+    dragType = 'move';
+    draggingTargetIndex = index;
+    draggingLayerOrigin = {
+      from: $canvas.layers[index].from,
+      range: $canvas.layers[index].range,
+    };
     canvasDrag.onDown(e);
   };
   const onUp = () => {
     canvasDrag.onUp();
     switch (dragType) {
-      case "sort":
+      case 'sort':
         sortLayer(draggingTargetIndex, getNearestGapLayerIndex(sortPoint));
         break;
     }
-    dragType = "";
+    dragType = '';
     draggingTargetIndex = -1;
+    draggingLayerOrigin = null;
     rangeDraggingOrigin = 0;
     sortPoint = null;
   };
@@ -119,46 +139,46 @@
   $: sortLineTopPx = sortPoint ? getNearestGapLayerTop(sortPoint) : 0;
 </script>
 
+<svelte:window
+  on:mousemove="{canvasDrag.onMove}"
+  on:mouseup="{onUp}"
+  on:mouseleave="{onUp}"
+/>
 <div class="root">
-  <div
-    class="timeline-wrapper"
-    on:mousedown|preventDefault="{onDownTimeline}"
-    on:mousemove|preventDefault="{canvasDrag.onMove}"
-    on:mouseup|preventDefault="{onUp}"
-    on:mouseleave|preventDefault="{onUp}"
-  >
-      <div class="timeline-content">
-        <ul class="layers" bind:this="{layerWrapper}">
-          {#each $canvas.layers as layer, i}
-            <li>
-              {#if i % 2 === 0}
-                <TicMark
-                  rangePxScale="{RANGE_PX_SCALE}"
-                  totalTime="{$totalTime}"
-                />
-              {/if}
-              <div style="{getLayerStyle(layer)}">
-                <TimelineLayer
-                  {layer}
-                  on:mouseDownSort="{({ detail }) => onDownSort(i, detail)}"
-                />
-              </div>
-            </li>
-          {/each}
-        </ul>
-        <div class="line" style="{`left: ${timelineLeftPx}px;`}">
-          <div></div>
-        </div>
+  <div class="timeline-wrapper" on:mousedown|preventDefault="{onDownTimeline}">
+    <div class="timeline-content">
+      <ul class="layers" bind:this="{layerWrapper}">
+        {#each $canvas.layers as layer, i (layer.key)}
+          <li>
+            {#if i % 2 === 0}
+              <TicMark
+                rangePxScale="{RANGE_PX_SCALE}"
+                totalTime="{$totalTime}"
+              />
+            {/if}
+            <div style="{getLayerStyle(layer)}">
+              <TimelineLayer
+                {layer}
+                on:mouseDownSort="{({ detail }) => onDownSort(i, detail)}"
+                on:mouseDownMove="{({ detail }) => onDownMove(i, detail)}"
+              />
+            </div>
+          </li>
+        {/each}
+      </ul>
+      <div class="line" style="{`left: ${timelineLeftPx}px;`}">
+        <div></div>
       </div>
-      {#if sortPoint}
-        <div
-          class="sort-dummy"
-          style="{getLayerStyle($canvas.layers[draggingTargetIndex]) + `top: ${sortPoint.y}px;`}"
-        >
-          <TimelineLayer layer="{$canvas.layers[draggingTargetIndex]}" />
-        </div>
-        <div class="sort-line" style="{`top: ${sortLineTopPx}px;`}"></div>
-      {/if}
+    </div>
+    {#if sortPoint}
+      <div
+        class="sort-dummy"
+        style="{getLayerStyle($canvas.layers[draggingTargetIndex]) + `top: ${sortPoint.y}px;`}"
+      >
+        <TimelineLayer layer="{$canvas.layers[draggingTargetIndex]}" />
+      </div>
+      <div class="sort-line" style="{`top: ${sortLineTopPx}px;`}"></div>
+    {/if}
   </div>
 </div>
 
