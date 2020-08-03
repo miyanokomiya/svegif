@@ -1,31 +1,34 @@
 <script lang="ts">
-  import type { Point } from "../types";
+  import type { Point, Layer } from "../types";
   import {
     canvas,
     setTimeline,
     patchScene,
-    moveScene,
+    sortLayer,
     totalTime,
-    getSumOfTime,
-    getNearestSceneIndexAtTime,
   } from "../stores/canvas";
   import { useDrag } from "../utils/drag";
   import TicMark from "./TicMark.svelte";
-  import TimelineScene from "./TimelineScene.svelte";
   import TimelineLayer from "./TimelineLayer.svelte";
 
   const RANGE_PX_SCALE = 0.1;
 
-  let scenesWrapper: HTMLElement;
+  let layerWrapper: HTMLElement;
   let dragType: "" | "timeline" | "range" | "sort" = "";
   let draggingTargetIndex = -1;
   let rangeDraggingOrigin = 0;
   let sortPoint: Point | null = null;
 
+  function getLayerStyle(layer: Layer): string {
+    return `width: ${layer.range * RANGE_PX_SCALE}px;  left: ${
+      layer.from * RANGE_PX_SCALE
+    }px;`;
+  }
+
   const moveTimeline = (p: Point) => {
-    const rect = scenesWrapper.getBoundingClientRect();
+    const rect = layerWrapper.getBoundingClientRect();
     const rate = (p.x - rect.left) / ($totalTime * RANGE_PX_SCALE);
-    setTimeline(rate * $totalTime);
+    setTimeline(Math.min(Math.max(rate, 0), 1) * $totalTime);
   };
 
   const moveRange = (arg: { base: Point; p: Point }) => {
@@ -33,11 +36,6 @@
     if (range < 1) return;
     patchScene(draggingTargetIndex, { range });
   };
-
-  function getNearestGapTimeAt(time: number): number {
-    const index = getNearestSceneIndexAtTime($canvas.scenes, time);
-    return getSumOfTime($canvas.scenes.slice(0, index));
-  }
 
   const canvasDrag = useDrag((arg) => {
     switch (dragType) {
@@ -48,7 +46,7 @@
         moveRange(arg);
         break;
       case "sort":
-        const rect = scenesWrapper.getBoundingClientRect();
+        const rect = layerWrapper.getBoundingClientRect();
         sortPoint = { x: arg.p.x - rect.left, y: arg.p.y - rect.top };
         break;
     }
@@ -73,11 +71,7 @@
     canvasDrag.onUp();
     switch (dragType) {
       case "sort":
-        const index = getNearestSceneIndexAtTime(
-          $canvas.scenes,
-          sortPoint.x / RANGE_PX_SCALE
-        );
-        moveScene(draggingTargetIndex, index);
+        sortLayer(draggingTargetIndex, getNearestGapLayerIndex(sortPoint));
         break;
     }
     dragType = "";
@@ -86,10 +80,43 @@
     sortPoint = null;
   };
 
+  function getNearestGapLayerIndex(p: Point): number {
+    if (!layerWrapper) return 0;
+
+    let top = 0;
+    let to = 0;
+    [...layerWrapper.childNodes].some((e: Element, i) => {
+      const rect = e.getBoundingClientRect();
+      if (p.y < top + rect.height / 2) {
+        return true;
+      } else {
+        top = top + rect.height;
+        to = i + 1;
+        return false;
+      }
+    });
+    return to;
+  }
+
+  function getNearestGapLayerTop(p: Point): number {
+    if (!layerWrapper) return 0;
+    const index = getNearestGapLayerIndex(p);
+    if ($canvas.layers.length <= index) {
+      return [...layerWrapper.childNodes].reduce(
+        (top, e: Element) => top + e.getBoundingClientRect().height,
+        0
+      );
+    } else {
+      const el = layerWrapper.childNodes[index] as Element;
+      return (
+        el.getBoundingClientRect().top -
+        layerWrapper.getBoundingClientRect().top
+      );
+    }
+  }
+
   $: timelineLeftPx = $canvas.timeline * RANGE_PX_SCALE;
-  $: sortLineLeftPx = sortPoint
-    ? getNearestGapTimeAt(sortPoint.x / RANGE_PX_SCALE) * RANGE_PX_SCALE
-    : 0;
+  $: sortLineTopPx = sortPoint ? getNearestGapLayerTop(sortPoint) : 0;
 </script>
 
 <div class="root">
@@ -100,46 +127,38 @@
     on:mouseup|preventDefault="{onUp}"
     on:mouseleave|preventDefault="{onUp}"
   >
-    <div class="timeline-content">
-      <TicMark rangePxScale="{RANGE_PX_SCALE}" totalTime="{$totalTime}" />
-      <ul class="scenes" bind:this="{scenesWrapper}">
-        {#each $canvas.scenes as scene, i}
-          <li style="{`width: ${scene.range * RANGE_PX_SCALE}px;`}">
-            <TimelineScene
-              {scene}
-              on:mouseDownRange="{({ detail }) => onDownRange(i, detail)}"
-              on:mouseDownSort="{({ detail }) => onDownSort(i, detail)}"
-            />
-          </li>
-        {/each}
-      </ul>
-      <ul class="layers">
-        {#each $canvas.layers as layer, i}
-          <li>
-            <div
-              style="{`width: ${layer.range * RANGE_PX_SCALE}px; left: ${layer.from * RANGE_PX_SCALE}px;`}"
-            >
-              <TimelineLayer {layer} />
-            </div>
-          </li>
-          {#if i % 2 === 1}
-            <TicMark rangePxScale="{RANGE_PX_SCALE}" totalTime="{$totalTime}" />
-          {/if}
-        {/each}
-      </ul>
-      <div class="line" style="{`left: ${timelineLeftPx}px;`}">
-        <div></div>
+      <div class="timeline-content">
+        <ul class="layers" bind:this="{layerWrapper}">
+          {#each $canvas.layers as layer, i}
+            <li>
+              {#if i % 2 === 0}
+                <TicMark
+                  rangePxScale="{RANGE_PX_SCALE}"
+                  totalTime="{$totalTime}"
+                />
+              {/if}
+              <div style="{getLayerStyle(layer)}">
+                <TimelineLayer
+                  {layer}
+                  on:mouseDownSort="{({ detail }) => onDownSort(i, detail)}"
+                />
+              </div>
+            </li>
+          {/each}
+        </ul>
+        <div class="line" style="{`left: ${timelineLeftPx}px;`}">
+          <div></div>
+        </div>
       </div>
       {#if sortPoint}
         <div
           class="sort-dummy"
-          style="{`width: ${$canvas.scenes[draggingTargetIndex].range * RANGE_PX_SCALE}px; left: ${sortPoint.x}px;`}"
+          style="{getLayerStyle($canvas.layers[draggingTargetIndex]) + `top: ${sortPoint.y}px;`}"
         >
-          <TimelineScene scene="{$canvas.scenes[draggingTargetIndex]}" />
+          <TimelineLayer layer="{$canvas.layers[draggingTargetIndex]}" />
         </div>
-        <div class="sort-line" style="{`left: ${sortLineLeftPx}px;`}"></div>
+        <div class="sort-line" style="{`top: ${sortLineTopPx}px;`}"></div>
       {/if}
-    </div>
   </div>
 </div>
 
@@ -151,22 +170,15 @@
     display: flex;
     border: 1px solid #000;
     overflow: auto;
+    position: relative;
+    padding: 0 30px;
+    overscroll-behavior: none;
   }
   .timeline-content {
     position: relative;
     display: inline-flex;
     flex-direction: column;
 
-    .scenes {
-      display: flex;
-      list-style: none;
-      cursor: pointer;
-
-      li {
-        display: flex;
-        border-right: 1px solid #aaa;
-      }
-    }
     .layers {
       list-style: none;
 
@@ -186,7 +198,7 @@
     width: 13px;
     height: 100%;
     padding: 0 5px;
-    transform: translateX(-50%);
+    transform: translateX(calc(-50%));
     border-top: 3px solid red;
     border-bottom: 3px solid red;
     pointer-events: none;
@@ -199,17 +211,17 @@
   }
   .sort-dummy {
     position: absolute;
-    top: 0;
-    opacity: 0.5;
-    transform: translateX(calc(-100% + 18px));
+    transform: translateY(-8px);
+    opacity: 0.6;
     pointer-events: none;
+    border: solid 1px #000;
   }
   .sort-line {
     position: absolute;
-    top: 0;
-    width: 5px;
-    height: 100%;
-    transform: translateX(-50%);
+    left: 0;
+    width: 100%;
+    height: 5px;
+    transform: translateY(-50%);
     background-color: blue;
     pointer-events: none;
   }

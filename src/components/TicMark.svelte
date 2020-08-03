@@ -18,7 +18,7 @@
     display: flex;
     list-style: none;
     cursor: pointer;
-    border-top: solid 1px #000;
+    border-bottom: solid 1px #000;
     background-color: #fff;
   }
   li {

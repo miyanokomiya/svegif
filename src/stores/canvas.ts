@@ -23,14 +23,14 @@ export function setTimeline(val: number): void {
   });
 }
 
-export function moveScene(from: number, to: number): void {
+export function sortLayer(from: number, to: number): void {
   if (from === to) return;
   canvas.update(($canvas) => {
-    $canvas.scenes.splice(to, 0, $canvas.scenes[from]);
+    $canvas.layers.splice(to, 0, $canvas.layers[from]);
     if (from < to) {
-      $canvas.scenes.splice(from, 1);
+      $canvas.layers.splice(from, 1);
     } else {
-      $canvas.scenes.splice(from + 1, 1);
+      $canvas.layers.splice(from + 1, 1);
     }
     return $canvas;
   });
