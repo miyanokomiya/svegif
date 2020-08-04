@@ -8,13 +8,15 @@
     totalTime,
   } from '../stores/canvas';
   import { useDrag } from '../utils/drag';
+  import { moveAll, moveLeft, moveRight } from '../utils/layer';
   import TicMark from './TicMark.svelte';
   import TimelineLayer from './TimelineLayer.svelte';
 
   const RANGE_PX_SCALE = 0.1;
 
   let layerWrapper: HTMLElement;
-  let dragType: '' | 'timeline' | 'sort' | 'move' = '';
+  let dragType: '' | 'timeline' | 'sort' | 'move' | 'rangeLeft' | 'rangeRight' =
+    '';
   let draggingTargetIndex = -1;
   let draggingLayerOrigin: { from: number; range: number } | null = null;
   let sortPoint: Point | null = null;
@@ -32,6 +34,11 @@
   }
 
   const canvasDrag = useDrag((arg) => {
+    const scaledDiff = {
+      x: (arg.p.x - arg.base.x) / RANGE_PX_SCALE,
+      y: (arg.p.y - arg.base.y) / RANGE_PX_SCALE,
+    };
+
     switch (dragType) {
       case 'timeline':
         moveTimeline(arg.p.x);
@@ -41,15 +48,24 @@
         sortPoint = { x: arg.p.x - rect.left, y: arg.p.y - rect.top };
         break;
       case 'move':
-        patchLayer(draggingTargetIndex, {
-          from: Math.max(
-            draggingLayerOrigin.from + (arg.p.x - arg.base.x) / RANGE_PX_SCALE,
-            0
-          ),
-        });
+        patchLayer(draggingTargetIndex, moveAll(draggingLayerOrigin, scaledDiff.x));
+        break;
+      case 'rangeLeft':
+        patchLayer(draggingTargetIndex, moveLeft(draggingLayerOrigin, scaledDiff.x));
+        break;
+      case 'rangeRight':
+        patchLayer(draggingTargetIndex, moveRight(draggingLayerOrigin, scaledDiff.x));
         break;
     }
   });
+
+  function storedraggingTarget(index: number) {
+    draggingTargetIndex = index;
+    draggingLayerOrigin = {
+      from: $canvas.layers[index].from,
+      range: $canvas.layers[index].range,
+    };
+  }
 
   const onDownTimeline = (e: MouseEvent) => {
     dragType = 'timeline';
@@ -57,16 +73,22 @@
   };
   const onDownSort = (index: number, e: MouseEvent) => {
     dragType = 'sort';
-    draggingTargetIndex = index;
+    storedraggingTarget(index);
     canvasDrag.onDown(e);
   };
   const onDownMove = (index: number, e: MouseEvent) => {
     dragType = 'move';
-    draggingTargetIndex = index;
-    draggingLayerOrigin = {
-      from: $canvas.layers[index].from,
-      range: $canvas.layers[index].range,
-    };
+    storedraggingTarget(index);
+    canvasDrag.onDown(e);
+  };
+  const onDownRangeLeft = (index: number, e: MouseEvent) => {
+    dragType = 'rangeLeft';
+    storedraggingTarget(index);
+    canvasDrag.onDown(e);
+  };
+  const onDownRangeRight = (index: number, e: MouseEvent) => {
+    dragType = 'rangeRight';
+    storedraggingTarget(index);
     canvasDrag.onDown(e);
   };
   const onUp = () => {
@@ -143,6 +165,8 @@
                 {layer}
                 on:mouseDownSort="{({ detail }) => onDownSort(i, detail)}"
                 on:mouseDownMove="{({ detail }) => onDownMove(i, detail)}"
+                on:mouseDownRangeLeft="{({ detail }) => onDownRangeLeft(i, detail)}"
+                on:mouseDownRangeRight="{({ detail }) => onDownRangeRight(i, detail)}"
               />
             </div>
           </li>
