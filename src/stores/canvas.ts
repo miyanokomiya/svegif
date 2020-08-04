@@ -1,5 +1,5 @@
 import { writable, derived } from 'svelte/store';
-import type { Scene, Layer, Canvas } from '../types';
+import type { Scene, Layer, Canvas, Rect } from '../types';
 import { getLayer } from '../utils/layer';
 
 export const canvas = writable<Canvas>({
@@ -19,6 +19,13 @@ export function pushLayer(layer: Layer): void {
 export function setTimeline(val: number): void {
   canvas.update(($canvas) => {
     $canvas.timeline = val;
+    return $canvas;
+  });
+}
+
+export function setViewBox(val: Rect): void {
+  canvas.update(($canvas) => {
+    $canvas.viewBox = val;
     return $canvas;
   });
 }

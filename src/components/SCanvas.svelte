@@ -1,8 +1,10 @@
 <script lang="ts">
-  import { canvas, currentScene } from '../stores/canvas';
+  import type { Rect } from '../types';
+  import { canvas, setViewBox, currentScene } from '../stores/canvas';
   import { useDrag } from '../utils/drag';
   import { SCALE_BETA, SCALE_RANGE, getZoomInfo } from '../utils/canvasView';
   import SElement from './elements/SElement.svelte';
+  import SRectFrame from './frames/SRectFrame.svelte';
 
   export let width = 100;
   export let height = 100;
@@ -25,6 +27,10 @@
     const next = getZoomInfo(canvasView, rate);
     scale = next.scale;
     base = next.base;
+  }
+
+  function resizeViewBox(rect: Rect) {
+    setViewBox(rect);
   }
 
   const canvasDrag = useDrag((arg) => {
@@ -72,16 +78,20 @@
         <SElement {element} />
       {/each}
     {/each}
-    <rect
-      x="{$canvas.viewBox.x}"
-      y="{$canvas.viewBox.y}"
-      width="{$canvas.viewBox.width}"
-      height="{$canvas.viewBox.height}"
-      fill="none"
-      stroke="red"
-      stroke-width="2"
-      stroke-dasharray="24 3 2 3 2 3"
-    ></rect>
+    <SRectFrame
+      {scale}
+      rect="{$canvas.viewBox}"
+      on:resize="{({ detail }) => resizeViewBox(detail)}"
+    >
+      <rect
+        width="{$canvas.viewBox.width}"
+        height="{$canvas.viewBox.height}"
+        fill="none"
+        stroke="red"
+        stroke-width="2"
+        stroke-dasharray="24 3 2 3 2 3"
+      ></rect>
+    </SRectFrame>
   </svg>
   <div bind:this="{scaleSlider}" class="scale-slider">
     <div
