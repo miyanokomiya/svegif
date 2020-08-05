@@ -2743,7 +2743,7 @@ object.values@^1.1.0:
 
 "okageo@git://github.com/miyanokomiya/okageo.git#for_svegif_dist":
   version "1.1.10"
-  resolved "git://github.com/miyanokomiya/okageo.git#b9185023b7098abef87b01f8e9e3dd055528ff39"
+  resolved "git://github.com/miyanokomiya/okageo.git#369ada632c75ddcd2d9d242ecc79fba5b69f0da7"
   dependencies:
     bili "^5.0.5"
 
