@@ -1,15 +1,18 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
+  import { drawing } from 'okageo';
+  import { cursor } from '../../stores/cursor';
   import type { Rect } from '../../types';
   import { useDrag } from '../../utils/drag';
-  import * as geo from '../../utils/geo';
+  import SMoveAnchor from '../svg/SMoveAnchor.svelte';
   import SCornerAnchor from '../svg/SCornerAnchor.svelte';
+  import SAnchorConnectLine from '../svg/SAnchorConnectLine.svelte';
 
   export let scale: number = 1;
   export let rect: Rect;
 
   const dispatch = createEventDispatcher();
-  let dragType: '' | 'LT' | 'RT' | 'RB' | 'LB' = '';
+  let dragType: '' | 'move' | 'LT' | 'RT' | 'RB' | 'LB' = '';
   let draggingRectOrigin: Rect | null = null;
 
   function dispatchResize(resized: Partial<Rect>) {
@@ -23,38 +26,42 @@
     };
 
     switch (dragType) {
-      case 'LT':
+      case 'move':
         dispatchResize({
-          ...geo.resizeByLeft(draggingRectOrigin, scaledDiff.x),
-          ...geo.resizeByTop(draggingRectOrigin, scaledDiff.y),
+          x: draggingRectOrigin.x + scaledDiff.x,
+          y: draggingRectOrigin.y + scaledDiff.y,
         });
+        break;
+      case 'LT':
+        dispatchResize(
+          drawing.resizeRectByLeftTop(draggingRectOrigin, scaledDiff)
+        );
         break;
       case 'RT':
-        dispatchResize({
-          ...geo.resizeByRight(draggingRectOrigin, scaledDiff.x),
-          ...geo.resizeByTop(draggingRectOrigin, scaledDiff.y),
-        });
+        dispatchResize(
+          drawing.resizeRectByRightTop(draggingRectOrigin, scaledDiff)
+        );
         break;
       case 'RB':
-        dispatchResize({
-          ...geo.resizeByRight(draggingRectOrigin, scaledDiff.x),
-          ...geo.resizeByBottom(draggingRectOrigin, scaledDiff.y),
-        });
+        dispatchResize(
+          drawing.resizeRectByRightBottom(draggingRectOrigin, scaledDiff)
+        );
         break;
       case 'LB':
-        dispatchResize({
-          ...geo.resizeByLeft(draggingRectOrigin, scaledDiff.x),
-          ...geo.resizeByBottom(draggingRectOrigin, scaledDiff.y),
-        });
+        dispatchResize(
+          drawing.resizeRectByLeftBottom(draggingRectOrigin, scaledDiff)
+        );
         break;
     }
   });
-  const onDownResize = (type: typeof dragType, e: MouseEvent) => {
+  const onDown = (type: typeof dragType, e: MouseEvent) => {
+    cursor.set('pointer');
     dragType = type;
     draggingRectOrigin = { ...rect };
     resizeDrag.onDown(e);
   };
   const onUpResize = () => {
+    cursor.clear();
     dragType = '';
     draggingRectOrigin = null;
     resizeDrag.onUp();
@@ -68,38 +75,50 @@
 />
 <g transform="{`translate(${rect.x} ${rect.y})`}">
   <slot />
+  <SAnchorConnectLine
+    {scale}
+    from="{{ x: -20, y: -20 }}"
+    to="{{ x: 0, y: 0 }}"
+  />
   <g
-    class="corner"
+    class="anchor"
+    transform="{`translate(${-20 * scale} ${-20 * scale}) scale(${scale})`}"
+    on:mousedown|preventDefault|stopPropagation="{(e) => onDown('move', e)}"
+  >
+    <SMoveAnchor />
+  </g>
+  <g
+    class="anchor"
     transform="{`rotate(-45) scale(${scale})`}"
-    on:mousedown|preventDefault|stopPropagation="{(e) => onDownResize('LT', e)}"
+    on:mousedown|preventDefault|stopPropagation="{(e) => onDown('LT', e)}"
   >
     <SCornerAnchor />
   </g>
   <g
-    class="corner"
+    class="anchor"
     transform="{`translate(${rect.width} 0) rotate(45) scale(${scale})`}"
-    on:mousedown|preventDefault|stopPropagation="{(e) => onDownResize('RT', e)}"
+    on:mousedown|preventDefault|stopPropagation="{(e) => onDown('RT', e)}"
   >
     <SCornerAnchor />
   </g>
   <g
-    class="corner"
+    class="anchor"
     transform="{`translate(${rect.width} ${rect.height}) rotate(135) scale(${scale})`}"
-    on:mousedown|preventDefault|stopPropagation="{(e) => onDownResize('RB', e)}"
+    on:mousedown|preventDefault|stopPropagation="{(e) => onDown('RB', e)}"
   >
     <SCornerAnchor />
   </g>
   <g
-    class="corner"
+    class="anchor"
     transform="{`translate(0 ${rect.height}) rotate(225) scale(${scale})`}"
-    on:mousedown|preventDefault|stopPropagation="{(e) => onDownResize('LB', e)}"
+    on:mousedown|preventDefault|stopPropagation="{(e) => onDown('LB', e)}"
   >
     <SCornerAnchor />
   </g>
 </g>
 
 <style>
-  .corner {
+  .anchor {
     cursor: pointer;
   }
 </style>

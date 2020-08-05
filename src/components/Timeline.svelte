@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { Point, Layer } from '../types';
+  import { cursor } from '../stores/cursor';
   import {
     canvas,
     setTimeline,
@@ -34,6 +35,7 @@
   }
 
   const canvasDrag = useDrag((arg) => {
+    cursor.set('pointer');
     const scaledDiff = {
       x: (arg.p.x - arg.base.x) / RANGE_PX_SCALE,
       y: (arg.p.y - arg.base.y) / RANGE_PX_SCALE,
@@ -48,13 +50,22 @@
         sortPoint = { x: arg.p.x - rect.left, y: arg.p.y - rect.top };
         break;
       case 'move':
-        patchLayer(draggingTargetIndex, moveAll(draggingLayerOrigin, scaledDiff.x));
+        patchLayer(
+          draggingTargetIndex,
+          moveAll(draggingLayerOrigin, scaledDiff.x)
+        );
         break;
       case 'rangeLeft':
-        patchLayer(draggingTargetIndex, moveLeft(draggingLayerOrigin, scaledDiff.x));
+        patchLayer(
+          draggingTargetIndex,
+          moveLeft(draggingLayerOrigin, scaledDiff.x)
+        );
         break;
       case 'rangeRight':
-        patchLayer(draggingTargetIndex, moveRight(draggingLayerOrigin, scaledDiff.x));
+        patchLayer(
+          draggingTargetIndex,
+          moveRight(draggingLayerOrigin, scaledDiff.x)
+        );
         break;
     }
   });
@@ -98,6 +109,7 @@
         sortLayer(draggingTargetIndex, getNearestGapLayerIndex(sortPoint));
         break;
     }
+    cursor.clear();
     dragType = '';
     draggingTargetIndex = -1;
     draggingLayerOrigin = null;

@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import type { ImageData } from '../types';
   import { readImageFile } from '../utils/file';
+  import { cursor } from '../stores/cursor';
   import { canvas, pushLayer, currentScene } from '../stores/canvas';
   import { getLayer, getImageElement } from '../utils/layer';
   import Timeline from '../components/Timeline.svelte';
@@ -63,6 +64,10 @@
   onMount(() => {
     recalcCanvasSize();
   });
+
+  $: {
+    document.body.style.cursor = $cursor;
+  }
 </script>
 
 <svelte:window on:resize="{recalcCanvasSize}" />

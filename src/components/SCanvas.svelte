@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { Rect } from '../types';
+  import { cursor } from '../stores/cursor';
   import { canvas, setViewBox, currentScene } from '../stores/canvas';
   import { useDrag } from '../utils/drag';
   import { SCALE_BETA, SCALE_RANGE, getZoomInfo } from '../utils/canvasView';
@@ -44,15 +45,18 @@
     }
   });
   const onDownCanvas = (e: MouseEvent) => {
+    cursor.set('move');
     canvasDrag.onDown(e);
     dragType = 'scroll';
   };
   const onDownZoom = (e: MouseEvent) => {
+    cursor.set('pointer');
     canvasDrag.onDown(e);
     dragType = 'zoom';
     recalcZoom(e.pageY);
   };
   const onUp = () => {
+    cursor.clear();
     canvasDrag.onUp();
     dragType = '';
   };
