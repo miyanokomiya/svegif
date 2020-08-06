@@ -1,5 +1,5 @@
 import { writable, derived } from 'svelte/store';
-import type { Scene, Layer, Canvas, Rect } from '../types';
+import type { Scene, Layer, BaseElement, Canvas, Rect } from '../types';
 import { getLayer } from '../utils/layer';
 
 export const canvas = writable<Canvas>({
@@ -43,16 +43,33 @@ export function sortLayer(from: number, to: number): void {
   });
 }
 
-export function patchScene(index: number, val: Partial<Scene>): void {
+export function patchLayer(index: number, val: Partial<Layer>): void {
   canvas.update(($canvas) => {
-    $canvas.scenes[index] = { ...$canvas.scenes[index], ...val };
+    $canvas.layers[index] = { ...$canvas.layers[index], ...val };
     return $canvas;
   });
 }
 
-export function patchLayer(index: number, val: Partial<Layer>): void {
+function findLayer(canvas: Canvas, key: string): Layer | null {
+  return canvas.layers.find((l) => l.key === key);
+}
+
+function findElement(layer: Layer, key: string): BaseElement | null {
+  return layer.elements.find((e) => e.key === key);
+}
+
+export function patchElement(
+  layerKey: string,
+  val: Partial<BaseElement> & { key: string }
+): void {
   canvas.update(($canvas) => {
-    $canvas.layers[index] = { ...$canvas.layers[index], ...val };
+    const layer = findLayer($canvas, layerKey);
+    if (!layer) return $canvas;
+
+    const element = findElement(layer, val.key);
+    if (!element) return $canvas;
+
+    Object.assign(element, val);
     return $canvas;
   });
 }

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
-  import { drawing } from 'okageo';
+  import { drawing, geo } from 'okageo';
   import { cursor } from '../../stores/cursor';
   import type { Rect } from '../../types';
   import { useDrag } from '../../utils/drag';
@@ -10,6 +10,7 @@
 
   export let scale: number = 1;
   export let rect: Rect;
+  export let keepAspect: boolean = false;
 
   const dispatch = createEventDispatcher();
   let dragType: '' | 'move' | 'LT' | 'RT' | 'RB' | 'LB' = '';
@@ -34,22 +35,38 @@
         break;
       case 'LT':
         dispatchResize(
-          drawing.resizeRectByLeftTop(draggingRectOrigin, scaledDiff)
+          drawing.resizeRectByLeftTop(
+            draggingRectOrigin,
+            scaledDiff,
+            keepAspect
+          )
         );
         break;
       case 'RT':
         dispatchResize(
-          drawing.resizeRectByRightTop(draggingRectOrigin, scaledDiff)
+          drawing.resizeRectByRightTop(
+            draggingRectOrigin,
+            scaledDiff,
+            keepAspect
+          )
         );
         break;
       case 'RB':
         dispatchResize(
-          drawing.resizeRectByRightBottom(draggingRectOrigin, scaledDiff)
+          drawing.resizeRectByRightBottom(
+            draggingRectOrigin,
+            scaledDiff,
+            keepAspect
+          )
         );
         break;
       case 'LB':
         dispatchResize(
-          drawing.resizeRectByLeftBottom(draggingRectOrigin, scaledDiff)
+          drawing.resizeRectByLeftBottom(
+            draggingRectOrigin,
+            scaledDiff,
+            keepAspect
+          )
         );
         break;
     }

@@ -1,7 +1,12 @@
 <script lang="ts">
-  import type { Rect } from '../types';
+  import type { Layer, Rect, BaseElement } from '../types';
   import { cursor } from '../stores/cursor';
-  import { canvas, setViewBox, currentScene } from '../stores/canvas';
+  import {
+    canvas,
+    setViewBox,
+    currentScene,
+    patchElement,
+  } from '../stores/canvas';
   import { useDrag } from '../utils/drag';
   import { SCALE_BETA, SCALE_RANGE, getZoomInfo } from '../utils/canvasView';
   import SElement from './elements/SElement.svelte';
@@ -32,6 +37,10 @@
 
   function resizeViewBox(rect: Rect) {
     setViewBox(rect);
+  }
+
+  function updateElement(layer: Layer, element: BaseElement) {
+    patchElement(layer.key, element);
   }
 
   const canvasDrag = useDrag((arg) => {
@@ -79,7 +88,11 @@
   >
     {#each $currentScene.layers as layer (layer.key)}
       {#each layer.elements as element (element.key)}
-        <SElement {element} />
+        <SElement
+          {scale}
+          {element}
+          on:update="{({ detail }) => updateElement(layer, detail)}"
+        />
       {/each}
     {/each}
     <SRectFrame
