@@ -6,7 +6,7 @@ export function getLayer(arg: Partial<Layer> = {}): Layer {
     key: uuidv4(),
     from: 0,
     range: 0,
-    elements: [],
+    elementKeys: [],
     ...arg,
   };
 }

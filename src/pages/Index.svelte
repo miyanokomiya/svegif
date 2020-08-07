@@ -3,7 +3,7 @@
   import type { ImageData } from '../types';
   import { readImageFile } from '../utils/file';
   import { cursor } from '../stores/cursor';
-  import { canvas, pushLayer, currentScene } from '../stores/canvas';
+  import { canvas, currentScene } from '../stores/canvas';
   import { getLayer, getImageElement } from '../utils/layer';
   import Timeline from '../components/Timeline.svelte';
   import SCanvas from '../components/SCanvas.svelte';
@@ -11,23 +11,21 @@
   type FileEventTarget = EventTarget & { files: FileList };
 
   function pushPlainLayer() {
-    pushLayer(getLayer({ from: $canvas.timeline, range: 1000 }));
+    canvas.pushLayer(getLayer({ from: $canvas.timeline, range: 1000 }));
   }
 
   function pushLayerFromImage(image: ImageData) {
-    pushLayer(
-      getLayer({
-        from: $canvas.timeline,
-        range: 1000,
-        elements: [
-          getImageElement({
-            base64: image.base64,
-            width: image.width,
-            height: image.height,
-          }),
-        ],
-      })
-    );
+    const element = getImageElement({
+      base64: image.base64,
+      width: image.width,
+      height: image.height,
+    });
+    const layer = getLayer({
+      from: $canvas.timeline,
+      range: 1000,
+    });
+    canvas.pushLayer(layer);
+    canvas.pushElement(layer.key, element);
   }
 
   const onChangeFiles = (e: { target: FileEventTarget }) => {

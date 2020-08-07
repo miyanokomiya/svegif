@@ -1,6 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
-  import { drawing, geo } from 'okageo';
+  import { drawing } from 'okageo';
   import { cursor } from '../../stores/cursor';
   import type { Rect } from '../../types';
   import { useDrag } from '../../utils/drag';

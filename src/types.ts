@@ -3,7 +3,6 @@ export interface TimelineEntity {
 }
 
 export interface Scene extends TimelineEntity {
-  image: ImageData;
   layers: Layer[];
 }
 
@@ -13,10 +12,16 @@ export interface ImageData {
   height: number;
 }
 
+export interface Canvas {
+  layerKeys: string[];
+  timeline: number;
+  viewBox: Rect;
+}
+
 export interface Layer extends TimelineEntity {
   key: string;
   from: number;
-  elements: BaseElement[];
+  elementKeys: string[];
 }
 
 export interface BaseElement {
@@ -30,11 +35,12 @@ export interface ImageElement extends RectElement {
   base64: string;
 }
 
-export interface Canvas {
-  scenes: Scene[];
-  layers: Layer[];
-  timeline: number;
-  viewBox: Rect;
+export interface Layers {
+  [key: string]: Layer;
+}
+
+export interface Elements {
+  [key: string]: BaseElement;
 }
 
 export interface Point {

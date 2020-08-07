@@ -14,7 +14,6 @@
 </script>
 
 <div class="root">
-  <img src="{scene.image.base64}" alt="" />
   <div
     class="range-anchor"
     on:mousedown|preventDefault|stopPropagation="{onMouseDownRange}"

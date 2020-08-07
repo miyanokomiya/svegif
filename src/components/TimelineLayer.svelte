@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { createEventDispatcher } from "svelte";
-  import type { Layer } from "../types";
-  import SElement from "./elements/SElement.svelte";
-  import { canvas } from "../stores/canvas";
+  import { createEventDispatcher } from 'svelte';
+  import type { Layer } from '../types';
+  import SElement from './elements/SElement.svelte';
+  import { canvas, elements } from '../stores/canvas';
 
   export let layer: Layer;
 
@@ -10,16 +10,16 @@
 
   const dispatch = createEventDispatcher();
   function onMouseDownRangeLeft(e: MouseEvent) {
-    dispatch("mouseDownRangeLeft", e);
+    dispatch('mouseDownRangeLeft', e);
   }
   function onMouseDownRangeRight(e: MouseEvent) {
-    dispatch("mouseDownRangeRight", e);
+    dispatch('mouseDownRangeRight', e);
   }
   function onMouseDownSort(e: MouseEvent) {
-    dispatch("mouseDownSort", e);
+    dispatch('mouseDownSort', e);
   }
   function onMouseDownMove(e: MouseEvent) {
-    dispatch("mouseDownMove", e);
+    dispatch('mouseDownMove', e);
   }
 </script>
 
@@ -32,20 +32,18 @@
     width="100%"
     height="100%"
   >
-    {#each layer.elements as element (element.key)}
-      <SElement {element} />
+    {#each layer.elementKeys as elementKey (elementKey)}
+      <SElement element="{$elements[elementKey]}" />
     {/each}
   </svg>
   <div
     class="range-anchor left"
     on:mousedown|preventDefault|stopPropagation="{onMouseDownRangeLeft}"
-  >
-  </div>
+  ></div>
   <div
     class="range-anchor right"
     on:mousedown|preventDefault|stopPropagation="{onMouseDownRangeRight}"
-  >
-  </div>
+  ></div>
   <div
     class="sort-anchor"
     on:mousedown|preventDefault|stopPropagation="{onMouseDownSort}"

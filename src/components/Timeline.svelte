@@ -1,13 +1,7 @@
 <script lang="ts">
   import type { Point, Layer } from '../types';
   import { cursor } from '../stores/cursor';
-  import {
-    canvas,
-    setTimeline,
-    patchLayer,
-    sortLayer,
-    totalTime,
-  } from '../stores/canvas';
+  import { canvas, layers, totalTime } from '../stores/canvas';
   import { useDrag } from '../utils/drag';
   import { moveAll, moveLeft, moveRight } from '../utils/layer';
   import TicMark from './TicMark.svelte';
@@ -18,7 +12,7 @@
   let layerWrapper: HTMLElement;
   let dragType: '' | 'timeline' | 'sort' | 'move' | 'rangeLeft' | 'rangeRight' =
     '';
-  let draggingTargetIndex = -1;
+  let draggingTargetKey = '';
   let draggingLayerOrigin: { from: number; range: number } | null = null;
   let sortPoint: Point | null = null;
 
@@ -31,7 +25,7 @@
   function moveTimeline(x: number) {
     const rect = layerWrapper.getBoundingClientRect();
     const rate = (x - rect.left) / ($totalTime * RANGE_PX_SCALE);
-    setTimeline(Math.min(Math.max(rate, 0), 1) * $totalTime);
+    canvas.setTimeline(Math.min(Math.max(rate, 0), 1) * $totalTime);
   }
 
   const canvasDrag = useDrag((arg) => {
@@ -50,31 +44,31 @@
         sortPoint = { x: arg.p.x - rect.left, y: arg.p.y - rect.top };
         break;
       case 'move':
-        patchLayer(
-          draggingTargetIndex,
-          moveAll(draggingLayerOrigin, scaledDiff.x)
-        );
+        canvas.patchLayer({
+          key: draggingTargetKey,
+          ...moveAll(draggingLayerOrigin, scaledDiff.x),
+        });
         break;
       case 'rangeLeft':
-        patchLayer(
-          draggingTargetIndex,
-          moveLeft(draggingLayerOrigin, scaledDiff.x)
-        );
+        canvas.patchLayer({
+          key: draggingTargetKey,
+          ...moveLeft(draggingLayerOrigin, scaledDiff.x),
+        });
         break;
       case 'rangeRight':
-        patchLayer(
-          draggingTargetIndex,
-          moveRight(draggingLayerOrigin, scaledDiff.x)
-        );
+        canvas.patchLayer({
+          key: draggingTargetKey,
+          ...moveRight(draggingLayerOrigin, scaledDiff.x),
+        });
         break;
     }
   });
 
-  function storedraggingTarget(index: number) {
-    draggingTargetIndex = index;
+  function storedraggingTarget(key: string) {
+    draggingTargetKey = key;
     draggingLayerOrigin = {
-      from: $canvas.layers[index].from,
-      range: $canvas.layers[index].range,
+      from: $layers[key].from,
+      range: $layers[key].range,
     };
   }
 
@@ -82,36 +76,39 @@
     dragType = 'timeline';
     canvasDrag.onDown(e);
   };
-  const onDownSort = (index: number, e: MouseEvent) => {
+  const onDownSort = (key: string, e: MouseEvent) => {
     dragType = 'sort';
-    storedraggingTarget(index);
+    storedraggingTarget(key);
     canvasDrag.onDown(e);
   };
-  const onDownMove = (index: number, e: MouseEvent) => {
+  const onDownMove = (key: string, e: MouseEvent) => {
     dragType = 'move';
-    storedraggingTarget(index);
+    storedraggingTarget(key);
     canvasDrag.onDown(e);
   };
-  const onDownRangeLeft = (index: number, e: MouseEvent) => {
+  const onDownRangeLeft = (key: string, e: MouseEvent) => {
     dragType = 'rangeLeft';
-    storedraggingTarget(index);
+    storedraggingTarget(key);
     canvasDrag.onDown(e);
   };
-  const onDownRangeRight = (index: number, e: MouseEvent) => {
+  const onDownRangeRight = (key: string, e: MouseEvent) => {
     dragType = 'rangeRight';
-    storedraggingTarget(index);
+    storedraggingTarget(key);
     canvasDrag.onDown(e);
   };
   const onUp = () => {
     canvasDrag.onUp();
     switch (dragType) {
       case 'sort':
-        sortLayer(draggingTargetIndex, getNearestGapLayerIndex(sortPoint));
+        canvas.sortLayer(
+          $canvas.layerKeys.indexOf(draggingTargetKey),
+          getNearestGapLayerIndex(sortPoint)
+        );
         break;
     }
     cursor.clear();
     dragType = '';
-    draggingTargetIndex = -1;
+    draggingTargetKey = '';
     draggingLayerOrigin = null;
     sortPoint = null;
   };
@@ -137,7 +134,7 @@
   function getNearestGapLayerTop(p: Point): number {
     if (!layerWrapper) return 0;
     const index = getNearestGapLayerIndex(p);
-    if ($canvas.layers.length <= index) {
+    if ($canvas.layerKeys.length <= index) {
       return [...layerWrapper.childNodes].reduce(
         (top, e: Element) => top + e.getBoundingClientRect().height,
         0
@@ -164,7 +161,7 @@
   <div class="timeline-wrapper" on:mousedown|preventDefault="{onDownTimeline}">
     <div class="timeline-content">
       <ul class="layers" bind:this="{layerWrapper}">
-        {#each $canvas.layers as layer, i (layer.key)}
+        {#each $canvas.layerKeys as layerKey, i (layerKey)}
           <li>
             {#if i % 2 === 0}
               <TicMark
@@ -172,13 +169,13 @@
                 totalTime="{$totalTime}"
               />
             {/if}
-            <div style="{getLayerStyle(layer)}">
+            <div style="{getLayerStyle($layers[layerKey])}">
               <TimelineLayer
-                {layer}
-                on:mouseDownSort="{({ detail }) => onDownSort(i, detail)}"
-                on:mouseDownMove="{({ detail }) => onDownMove(i, detail)}"
-                on:mouseDownRangeLeft="{({ detail }) => onDownRangeLeft(i, detail)}"
-                on:mouseDownRangeRight="{({ detail }) => onDownRangeRight(i, detail)}"
+                layer="{$layers[layerKey]}"
+                on:mouseDownSort="{({ detail }) => onDownSort(layerKey, detail)}"
+                on:mouseDownMove="{({ detail }) => onDownMove(layerKey, detail)}"
+                on:mouseDownRangeLeft="{({ detail }) => onDownRangeLeft(layerKey, detail)}"
+                on:mouseDownRangeRight="{({ detail }) => onDownRangeRight(layerKey, detail)}"
               />
             </div>
           </li>
@@ -191,9 +188,9 @@
     {#if sortPoint}
       <div
         class="sort-dummy"
-        style="{getLayerStyle($canvas.layers[draggingTargetIndex]) + `top: ${sortPoint.y}px;`}"
+        style="{getLayerStyle($layers[draggingTargetKey]) + `top: ${sortPoint.y}px;`}"
       >
-        <TimelineLayer layer="{$canvas.layers[draggingTargetIndex]}" />
+        <TimelineLayer layer="{$layers[draggingTargetKey]}" />
       </div>
       <div class="sort-line" style="{`top: ${sortLineTopPx}px;`}"></div>
     {/if}
