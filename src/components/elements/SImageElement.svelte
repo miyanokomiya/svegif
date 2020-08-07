@@ -3,7 +3,8 @@
   import type { ImageElement, Rect } from '../../types';
   import SRectFrame from '../frames/SRectFrame.svelte';
 
-  export let scale: number;
+  export let scale: number = 1;
+  export let resizing: boolean = false;
   export let element: ImageElement;
 
   const dispatch = createEventDispatcher();
@@ -14,9 +15,11 @@
 
 <SRectFrame
   {scale}
+  {resizing}
   rect="{element}"
   keepAspect
   on:resize="{({ detail }) => update(detail)}"
+  on:select
 >
   <image
     x="0"

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
+  import { createEventDispatcher, tick } from 'svelte';
   import { drawing } from 'okageo';
   import { cursor } from '../../stores/cursor';
   import type { Rect } from '../../types';
@@ -9,6 +9,7 @@
   import SAnchorConnectLine from '../svg/SAnchorConnectLine.svelte';
 
   export let scale: number = 1;
+  export let resizing: boolean = false;
   export let rect: Rect;
   export let keepAspect: boolean = false;
 
@@ -83,6 +84,13 @@
     draggingRectOrigin = null;
     resizeDrag.onUp();
   };
+  async function select(e: MouseEvent) {
+    dispatch('select');
+    await tick();
+    if (resizing) {
+      onDown('move', e);
+    }
+  }
 </script>
 
 <svelte:window
@@ -90,48 +98,60 @@
   on:mouseup="{onUpResize}"
   on:mouseleave="{onUpResize}"
 />
-<g transform="{`translate(${rect.x} ${rect.y})`}">
+<g
+  transform="{`translate(${rect.x} ${rect.y})`}"
+  on:mousedown|preventDefault|stopPropagation="{select}"
+>
   <slot />
-  <SAnchorConnectLine
-    {scale}
-    from="{{ x: -20, y: -20 }}"
-    to="{{ x: 0, y: 0 }}"
-  />
-  <g
-    class="anchor"
-    transform="{`translate(${-20 * scale} ${-20 * scale}) scale(${scale})`}"
-    on:mousedown|preventDefault|stopPropagation="{(e) => onDown('move', e)}"
-  >
-    <SMoveAnchor />
-  </g>
-  <g
-    class="anchor"
-    transform="{`rotate(-45) scale(${scale})`}"
-    on:mousedown|preventDefault|stopPropagation="{(e) => onDown('LT', e)}"
-  >
-    <SCornerAnchor />
-  </g>
-  <g
-    class="anchor"
-    transform="{`translate(${rect.width} 0) rotate(45) scale(${scale})`}"
-    on:mousedown|preventDefault|stopPropagation="{(e) => onDown('RT', e)}"
-  >
-    <SCornerAnchor />
-  </g>
-  <g
-    class="anchor"
-    transform="{`translate(${rect.width} ${rect.height}) rotate(135) scale(${scale})`}"
-    on:mousedown|preventDefault|stopPropagation="{(e) => onDown('RB', e)}"
-  >
-    <SCornerAnchor />
-  </g>
-  <g
-    class="anchor"
-    transform="{`translate(0 ${rect.height}) rotate(225) scale(${scale})`}"
-    on:mousedown|preventDefault|stopPropagation="{(e) => onDown('LB', e)}"
-  >
-    <SCornerAnchor />
-  </g>
+  {#if resizing}
+    <SAnchorConnectLine
+      {scale}
+      from="{{ x: -20, y: -20 }}"
+      to="{{ x: 0, y: 0 }}"
+    />
+    <g
+      class="anchor"
+      transform="{`translate(${-20 * scale} ${-20 * scale}) scale(${scale})`}"
+      on:mousedown|preventDefault|stopPropagation="{(e) => onDown('move', e)}"
+    >
+      <SMoveAnchor />
+    </g>
+    <rect
+      width="{rect.width}"
+      height="{rect.height}"
+      fill="rgba(0,0,255, 0.3)"
+      stroke="none"
+      on:mousedown|preventDefault|stopPropagation="{(e) => onDown('move', e)}"
+    ></rect>
+    <g
+      class="anchor"
+      transform="{`rotate(-45) scale(${scale})`}"
+      on:mousedown|preventDefault|stopPropagation="{(e) => onDown('LT', e)}"
+    >
+      <SCornerAnchor />
+    </g>
+    <g
+      class="anchor"
+      transform="{`translate(${rect.width} 0) rotate(45) scale(${scale})`}"
+      on:mousedown|preventDefault|stopPropagation="{(e) => onDown('RT', e)}"
+    >
+      <SCornerAnchor />
+    </g>
+    <g
+      class="anchor"
+      transform="{`translate(${rect.width} ${rect.height}) rotate(135) scale(${scale})`}"
+      on:mousedown|preventDefault|stopPropagation="{(e) => onDown('RB', e)}"
+    >
+      <SCornerAnchor />
+    </g>
+    <g
+      class="anchor"
+      transform="{`translate(0 ${rect.height}) rotate(225) scale(${scale})`}"
+      on:mousedown|preventDefault|stopPropagation="{(e) => onDown('LB', e)}"
+    >
+      <SCornerAnchor />
+    </g>
+  {/if}
 </g>
 
 <style>

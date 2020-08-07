@@ -12,6 +12,7 @@
   let scale = 1;
   let base = { x: 0, y: 0 };
   let dragType: '' | 'scroll' | 'zoom' = '';
+  let selectedElementKey = '';
   let scaleSlider: HTMLElement | null;
   $: canvasView = {
     scale,
@@ -38,16 +39,21 @@
     canvas.patchElement(element);
   }
 
-  const canvasDrag = useDrag((arg) => {
-    switch (dragType) {
-      case 'scroll':
-        base = { x: base.x - arg.d.x * scale, y: base.y - arg.d.y * scale };
-        break;
-      case 'zoom':
-        recalcZoom(arg.p.y);
-        break;
+  const canvasDrag = useDrag(
+    (arg) => {
+      switch (dragType) {
+        case 'scroll':
+          base = { x: base.x - arg.d.x * scale, y: base.y - arg.d.y * scale };
+          break;
+        case 'zoom':
+          recalcZoom(arg.p.y);
+          break;
+      }
+    },
+    () => {
+      selectedElementKey = '';
     }
-  });
+  );
   const onDownCanvas = (e: MouseEvent) => {
     cursor.set('move');
     canvasDrag.onDown(e);
@@ -86,16 +92,20 @@
         {#each layer.elementKeys as elementKey (elementKey)}
           <SElement
             {scale}
+            resizing="{elementKey === selectedElementKey}"
             element="{$elements[elementKey]}"
             on:update="{({ detail }) => updateElement(detail)}"
+            on:select="{() => (selectedElementKey = elementKey)}"
           />
         {/each}
       </g>
     {/each}
     <SRectFrame
       {scale}
+      resizing="{selectedElementKey === 'viewBox'}"
       rect="{$canvas.viewBox}"
       on:resize="{({ detail }) => resizeViewBox(detail)}"
+      on:select="{() => (selectedElementKey = 'viewBox')}"
     >
       <rect
         width="{$canvas.viewBox.width}"
@@ -105,6 +115,7 @@
         stroke-width="2"
         stroke-dasharray="24 3 2 3 2 3"
       ></rect>
+      <circle r="{10 * scale}" fill="red"></circle>
     </SRectFrame>
   </svg>
   <div bind:this="{scaleSlider}" class="scale-slider">

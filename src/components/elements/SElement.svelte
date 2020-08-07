@@ -2,7 +2,8 @@
   import type { BaseElement, ImageElement } from '../../types';
   import SImageElement from './SImageElement.svelte';
 
-  export let scale: number;
+  export let scale: number = 1;
+  export let resizing: boolean = false;
   export let element: BaseElement;
 
   let imageElement: ImageElement | null;
@@ -16,5 +17,11 @@
 </script>
 
 {#if imageElement}
-  <SImageElement {scale} element="{imageElement}" on:update />
+  <SImageElement
+    {scale}
+    {resizing}
+    element="{imageElement}"
+    on:select
+    on:update
+  />
 {/if}
