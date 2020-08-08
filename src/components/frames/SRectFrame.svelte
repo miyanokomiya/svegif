@@ -1,6 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher, tick } from 'svelte';
-  import { drawing } from 'okageo';
+  import { drawing, geo } from 'okageo';
   import { cursor } from '../../stores/cursor';
   import type { Rect } from '../../types';
   import { useDrag } from '../../utils/drag';
@@ -14,7 +14,7 @@
   export let keepAspect: boolean = false;
 
   const dispatch = createEventDispatcher();
-  let dragType: '' | 'move' | 'LT' | 'RT' | 'RB' | 'LB' = '';
+  let dragType: '' | 'move' | 'rotate' | 'LT' | 'RT' | 'RB' | 'LB' = '';
   let draggingRectOrigin: Rect | null = null;
 
   function dispatchResize(resized: Partial<Rect>) {
@@ -22,23 +22,46 @@
   }
 
   const resizeDrag = useDrag((arg) => {
-    const scaledDiff = {
-      x: (arg.p.x - arg.base.x) * scale,
-      y: (arg.p.y - arg.base.y) * scale,
+    if (dragType === '') return;
+    const scaledDiff = geo.multi(geo.sub(arg.p, arg.base), scale);
+    const center = {
+      x: draggingRectOrigin.x + draggingRectOrigin.width / 2,
+      y: draggingRectOrigin.y + draggingRectOrigin.height / 2,
     };
+
+    const normalizedP = geo.rotate(
+      geo.multi(arg.p, scale),
+      -draggingRectOrigin.radian,
+      center
+    );
+    const normalizedBase = geo.rotate(
+      geo.multi(arg.base, scale),
+      -draggingRectOrigin.radian,
+      center
+    );
 
     switch (dragType) {
       case 'move':
-        dispatchResize({
-          x: draggingRectOrigin.x + scaledDiff.x,
-          y: draggingRectOrigin.y + scaledDiff.y,
-        });
+        dispatchResize(geo.add(draggingRectOrigin, scaledDiff));
+        break;
+      case 'rotate':
+        {
+          const anchorP = geo.rotate(
+            { x: center.x, y: draggingRectOrigin.y - 20 * scale },
+            draggingRectOrigin.radian,
+            center
+          );
+          // add 'Math.PI/2' to adjust anchor's radian
+          const nextRad =
+            Math.PI / 2 + geo.getRadian(geo.add(anchorP, scaledDiff), center);
+          dispatchResize({ radian: nextRad });
+        }
         break;
       case 'LT':
         dispatchResize(
           drawing.resizeRectByLeftTop(
             draggingRectOrigin,
-            scaledDiff,
+            geo.sub(normalizedP, normalizedBase),
             keepAspect
           )
         );
@@ -47,7 +70,7 @@
         dispatchResize(
           drawing.resizeRectByRightTop(
             draggingRectOrigin,
-            scaledDiff,
+            geo.sub(normalizedP, normalizedBase),
             keepAspect
           )
         );
@@ -56,7 +79,7 @@
         dispatchResize(
           drawing.resizeRectByRightBottom(
             draggingRectOrigin,
-            scaledDiff,
+            geo.sub(normalizedP, normalizedBase),
             keepAspect
           )
         );
@@ -65,7 +88,7 @@
         dispatchResize(
           drawing.resizeRectByLeftBottom(
             draggingRectOrigin,
-            scaledDiff,
+            geo.sub(normalizedP, normalizedBase),
             keepAspect
           )
         );
@@ -91,6 +114,13 @@
       onDown('move', e);
     }
   }
+
+  $: transform = [
+    `translate(${rect.x} ${rect.y})`,
+    `rotate(${(rect.radian / Math.PI) * 180}, ${rect.width / 2}, ${
+      rect.height / 2
+    })`,
+  ].join(' ');
 </script>
 
 <svelte:window
@@ -98,10 +128,7 @@
   on:mouseup="{onUpResize}"
   on:mouseleave="{onUpResize}"
 />
-<g
-  transform="{`translate(${rect.x} ${rect.y})`}"
-  on:mousedown|preventDefault|stopPropagation="{select}"
->
+<g {transform} on:mousedown|preventDefault|stopPropagation="{select}">
   <slot />
   {#if resizing}
     <SAnchorConnectLine
@@ -113,6 +140,18 @@
       class="anchor"
       transform="{`translate(${-20 * scale} ${-20 * scale}) scale(${scale})`}"
       on:mousedown|preventDefault|stopPropagation="{(e) => onDown('move', e)}"
+    >
+      <SMoveAnchor />
+    </g>
+    <SAnchorConnectLine
+      {scale}
+      from="{{ x: rect.width / 2, y: 0 }}"
+      to="{{ x: rect.width / 2, y: -20 }}"
+    />
+    <g
+      class="anchor"
+      transform="{`translate(${rect.width / 2} ${-20 * scale}) scale(${scale})`}"
+      on:mousedown|preventDefault|stopPropagation="{(e) => onDown('rotate', e)}"
     >
       <SMoveAnchor />
     </g>

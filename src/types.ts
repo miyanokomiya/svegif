@@ -51,6 +51,7 @@ export interface Point {
 export interface Rect extends Point {
   width: number;
   height: number;
+  radian: number;
 }
 
 export interface CanvasView {

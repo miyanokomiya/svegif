@@ -19,6 +19,7 @@ export function getRectElement(arg: Partial<RectElement> = {}): RectElement {
     y: 0,
     width: 1,
     height: 1,
+    radian: 0,
     ...arg,
   };
 }

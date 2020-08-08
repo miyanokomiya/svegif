@@ -11,7 +11,7 @@ import type {
 export const _canvas = writable<Canvas>({
   layerKeys: [],
   timeline: 0,
-  viewBox: { x: 0, y: 0, width: 400, height: 400 },
+  viewBox: { x: 0, y: 0, width: 400, height: 400, radian: 0 },
 });
 export const _layers = writable<Layers>({});
 export const _elements = writable<Elements>({});
