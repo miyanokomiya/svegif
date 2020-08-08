@@ -1614,7 +1614,7 @@ object.values@^1.1.0:
 
 "okageo@git://github.com/miyanokomiya/okageo.git#for_svegif_dist":
   version "2.0.0"
-  resolved "git://github.com/miyanokomiya/okageo.git#76b0c80daec4d32d0f405c352b9511eaed9d34a8"
+  resolved "git://github.com/miyanokomiya/okageo.git#0d740f3b3aef2412188428deae16e077bbcbbf22"
 
 once@^1.3.0:
   version "1.4.0"

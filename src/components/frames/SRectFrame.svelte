@@ -1,10 +1,12 @@
 <script lang="ts">
   import { createEventDispatcher, tick } from 'svelte';
   import { drawing, geo } from 'okageo';
+  import type { IRectangle } from 'okageo';
   import { cursor } from '../../stores/cursor';
-  import type { Rect } from '../../types';
+  import type { Point, Rect } from '../../types';
   import { useDrag } from '../../utils/drag';
   import SMoveAnchor from '../svg/SMoveAnchor.svelte';
+  import SRotateAnchor from '../svg/SRotateAnchor.svelte';
   import SCornerAnchor from '../svg/SCornerAnchor.svelte';
   import SAnchorConnectLine from '../svg/SAnchorConnectLine.svelte';
 
@@ -12,6 +14,13 @@
   export let resizing: boolean = false;
   export let rect: Rect;
   export let keepAspect: boolean = false;
+
+  function getRectCenter(rec: IRectangle): Point {
+    return {
+      x: rec.x + rec.width / 2,
+      y: rec.y + rec.height / 2,
+    };
+  }
 
   const dispatch = createEventDispatcher();
   let dragType: '' | 'move' | 'rotate' | 'LT' | 'RT' | 'RB' | 'LB' = '';
@@ -24,21 +33,10 @@
   const resizeDrag = useDrag((arg) => {
     if (dragType === '') return;
     const scaledDiff = geo.multi(geo.sub(arg.p, arg.base), scale);
-    const center = {
-      x: draggingRectOrigin.x + draggingRectOrigin.width / 2,
-      y: draggingRectOrigin.y + draggingRectOrigin.height / 2,
-    };
+    const center = getRectCenter(draggingRectOrigin);
 
-    const normalizedP = geo.rotate(
-      geo.multi(arg.p, scale),
-      -draggingRectOrigin.radian,
-      center
-    );
-    const normalizedBase = geo.rotate(
-      geo.multi(arg.base, scale),
-      -draggingRectOrigin.radian,
-      center
-    );
+    const scaledBase = geo.multi(arg.base, scale);
+    const scaledP = geo.multi(arg.p, scale);
 
     switch (dragType) {
       case 'move':
@@ -59,36 +57,44 @@
         break;
       case 'LT':
         dispatchResize(
-          drawing.resizeRectByLeftTop(
+          drawing.resizeRectByLeftTopWithRotation(
             draggingRectOrigin,
-            geo.sub(normalizedP, normalizedBase),
+            scaledBase,
+            scaledP,
+            draggingRectOrigin.radian,
             keepAspect
           )
         );
         break;
       case 'RT':
         dispatchResize(
-          drawing.resizeRectByRightTop(
+          drawing.resizeRectByRightTopWithRotation(
             draggingRectOrigin,
-            geo.sub(normalizedP, normalizedBase),
+            scaledBase,
+            scaledP,
+            draggingRectOrigin.radian,
             keepAspect
           )
         );
         break;
       case 'RB':
         dispatchResize(
-          drawing.resizeRectByRightBottom(
+          drawing.resizeRectByRightBottomWithRotation(
             draggingRectOrigin,
-            geo.sub(normalizedP, normalizedBase),
+            scaledBase,
+            scaledP,
+            draggingRectOrigin.radian,
             keepAspect
           )
         );
         break;
       case 'LB':
         dispatchResize(
-          drawing.resizeRectByLeftBottom(
+          drawing.resizeRectByLeftBottomWithRotation(
             draggingRectOrigin,
-            geo.sub(normalizedP, normalizedBase),
+            scaledBase,
+            scaledP,
+            draggingRectOrigin.radian,
             keepAspect
           )
         );
@@ -145,15 +151,15 @@
     </g>
     <SAnchorConnectLine
       {scale}
-      from="{{ x: rect.width / 2, y: 0 }}"
-      to="{{ x: rect.width / 2, y: -20 }}"
+      from="{{ x: rect.width / 2 / scale, y: 0 }}"
+      to="{{ x: rect.width / 2 / scale, y: -20 }}"
     />
     <g
       class="anchor"
       transform="{`translate(${rect.width / 2} ${-20 * scale}) scale(${scale})`}"
       on:mousedown|preventDefault|stopPropagation="{(e) => onDown('rotate', e)}"
     >
-      <SMoveAnchor />
+      <SRotateAnchor />
     </g>
     <rect
       width="{rect.width}"
